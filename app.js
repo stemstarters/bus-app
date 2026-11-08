@@ -493,7 +493,7 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel }) {
       <form class="settings" id="settings-form">
         <section class="card step s1">
           <h2>${chip(1)} Your school</h2>
-          <label>School name<input id="s-name" value="${esc(st.name)}" placeholder="Hodge Road Elementary" required /></label>
+          <label>School name<input id="s-name" value="${esc(st.name)}" placeholder="e.g. Sunnyside Elementary" required /></label>
           <label><span>A note for teachers <span class="muted">(optional)</span></span><input id="s-msg" value="${esc(st.message)}" placeholder="Walk, don't run! 🚶" /></label>
         </section>
 
