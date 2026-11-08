@@ -1170,7 +1170,9 @@ function renderDisplay(code) {
 
     // Cards
     const groupsToShow = group === "all" ? settings.groups : settings.groups.filter((g) => g.id === group);
-    document.getElementById("d-grid").innerHTML = settings.buses.map((b) => {
+    const order = (b) => (st.buses[b.id]?.left ? 1 : 0); // buses that left go to the bottom
+    const sorted = settings.buses.slice().sort((x, y) => order(x) - order(y));
+    document.getElementById("d-grid").innerHTML = sorted.map((b) => {
       const s = st.buses[b.id];
       let status = "away", label = tr("onTheWay", lang), sub = "";
       if (s?.arrived) { status = "here"; label = tr("here", lang); }
@@ -1185,9 +1187,9 @@ function renderDisplay(code) {
         ? `<div class="chips">${settings.groups.map((g) => { const t = s?.called?.[g.id]; const cls = t ? (now - t < GO_NOW_MS ? "go" : "sent") : ""; return `<span class="g-chip ${cls}">${esc(g.name)}${t ? " ✓" : ""}</span>`; }).join("")}</div>`
         : "";
       return `<div class="d-card ${status}" style="--bus:${esc(b.color)}">
-        <div class="d-bus">${busSVG(b.color, status === "go" ? "bounce" : status === "away" || status === "left" ? "faded" : "")}</div>
+        <div class="d-bus">${busSVG(b.color, status === "go" ? "bounce" : status === "away" ? "soft" : status === "left" ? "gone" : "")}</div>
         <div class="d-name">${esc(b.name)}</div>
-        <div class="d-status">${label}</div>
+        <div class="d-status ${status === "go" ? "" : "pill"}">${status === "away" ? "🕒 " : status === "here" ? "📍 " : ""}${label}</div>
         ${sub ? `<div class="d-sub">${sub}</div>` : ""}
         ${chips}
       </div>`;
