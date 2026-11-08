@@ -999,7 +999,7 @@ function renderDisplay(code) {
         <div class="d-main">
           <section id="video-wrap"></section>
           <div class="d-side">
-            <div class="road" id="road"><div class="road-line"></div></div>
+            <div class="road" id="road"><div class="road-line"></div><div class="road-zone here" id="road-here"></div><div class="road-zone gone" id="road-gone"></div></div>
             <div class="d-grid" id="d-grid"></div>
           </div>
         </div>
@@ -1148,28 +1148,33 @@ function renderDisplay(code) {
     document.getElementById("d-msg").innerHTML = settings.message ? `💬 ${esc(settings.message)}` : "";
     document.getElementById("d-msg").style.display = settings.message ? "" : "none";
 
-    // Road with arrived buses
-    const arrived = settings.buses.filter((b) => st.buses[b.id]?.arrived && !st.buses[b.id].left);
+    // Street: buses that are here park on the left; buses that left move to the far end.
     const road = document.getElementById("road");
-    const have = new Set([...road.querySelectorAll("[data-road]")].map((n) => n.dataset.road));
-    const want = new Set(arrived.map((b) => b.id));
-    have.forEach((id) => {
-      if (want.has(id)) return;
-      const el = road.querySelector(`[data-road="${id}"]`);
-      if (!el || el.classList.contains("leaving")) return;
-      el.classList.add("leaving");
-      setTimeout(() => el.remove(), 1600);
-    });
-    arrived.forEach((b) => {
-      if (!have.has(b.id)) {
-        const d = document.createElement("div");
-        d.className = "road-bus";
-        d.dataset.road = b.id;
-        d.innerHTML = busSVG(b.color, "drive-in") + `<span>${esc(b.name)}</span>`;
-        road.appendChild(d);
+    const hereZone = document.getElementById("road-here");
+    const goneZone = document.getElementById("road-gone");
+    const placeOf = (b) => { const x = st.buses[b.id]; return !x?.arrived ? null : x.left ? "gone" : "here"; };
+    settings.buses.forEach((b) => {
+      const place = placeOf(b);
+      let el = road.querySelector(`[data-road="${b.id}"]`);
+      if (!place) { el?.remove(); return; }
+      const zone = place === "gone" ? goneZone : hereZone;
+      if (!el) {
+        el = document.createElement("div");
+        el.className = "road-bus";
+        el.dataset.road = b.id;
+        el.innerHTML = busSVG(b.color, "drive-in") + `<span>${esc(b.name)}</span>`;
+        zone.appendChild(el);
+      } else if (el.parentElement !== zone) {
+        // Drive from its parking spot down to the other end of the street
+        const before = el.getBoundingClientRect();
+        zone.appendChild(el);
+        const after = el.getBoundingClientRect();
+        el.querySelector(".bus-svg")?.classList.remove("drive-in");
+        el.animate([{ transform: `translateX(${before.left - after.left}px)` }, { transform: "translateX(0)" }], { duration: 1400, easing: "ease-in-out" });
       }
+      el.classList.toggle("parked-gone", place === "gone");
     });
-    road.classList.toggle("empty", !arrived.length);
+    road.classList.toggle("empty", !road.querySelector("[data-road]"));
     road.dataset.empty = T.noBusesYet[lang === "es" ? 1 : 0];
 
     // Cards
