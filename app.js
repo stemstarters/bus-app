@@ -30,16 +30,25 @@ const sess = {
 };
 function linkFor(code, admin) { return `${location.origin}/${code}${admin ? "/admin" : ""}`; }
 
+// Pull a 6-character school code out of whatever was typed or pasted:
+// "ABC123", "abc 123", "bus.stemstarters.com/ABC123", ".../ABC123/admin", "?code=ABC123"…
+function extractCode(raw) {
+  const txt = String(raw || "").trim();
+  const m = /(?:^|[/=#?\s])([A-Za-z0-9]{3})[\s-]?([A-Za-z0-9]{3})(?=$|[/?#&\s.,!])/.exec(txt.replace(/^https?:\/\/[^/]+/i, "/"));
+  return m ? (m[1] + m[2]).toUpperCase() : null;
+}
 function route() {
   const params = new URLSearchParams(location.search);
-  let code = params.get("s");
+  let code = params.get("s") || params.get("code");
   let admin = params.has("admin");
-  const parts = location.pathname.split("/").filter(Boolean);
-  if (!code && parts[0] && /^[A-Za-z0-9]{6}$/.test(parts[0])) {
-    code = parts[0];
-    admin = admin || parts[1] === "admin";
+  const parts = decodeURIComponent(location.pathname).split("/").map((p) => p.trim()).filter(Boolean);
+  if (!code && parts[0]) {
+    const c = extractCode("/" + parts[0]);
+    if (c) { code = c; admin = admin || /^admin$/i.test(parts[1] || ""); }
   }
-  return { code: code ? code.toUpperCase() : null, admin };
+  if (!code && location.hash) code = extractCode("#" + location.hash.slice(1));
+  code = code ? extractCode("/" + code) : null;
+  return { code, admin };
 }
 function go(path) { history.pushState({}, "", path); boot(); }
 window.addEventListener("popstate", () => boot());
@@ -57,6 +66,8 @@ const T = {
   allGroups: ["All groups (office view)", "Todos los grupos"],
   noBusesYet: ["No buses have arrived yet.", "Todavía no han llegado autobuses."],
   calledAt: ["Called at", "Llamado a las"],
+  leftCampus: ["Left campus 👋", "Ya salió 👋"],
+  leftAt: ["Left at", "Salió a las"],
 };
 function tr(key, lang) {
   const [en, es] = T[key];
@@ -87,6 +98,7 @@ function defaultSettings() {
     groups: ["K–1", "2–3", "4–5"].map((n) => ({ id: uid("g"), name: n })),
     theme: { ...THEMES.STEMstarters },
     chime: true,
+    sound: "chime",
     lang: "en",
     message: "",
   };
@@ -185,6 +197,49 @@ function unlockAudio() {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === "suspended") audioCtx.resume();
   } catch {}
+}
+const SOUNDS = { chime: "Chime", horn: "Bus horn", bell: "School bell", none: "No sound" };
+function soundOf(settings) { return settings.sound || (settings.chime === false ? "none" : "chime"); }
+function playSound(kind) {
+  if (!audioCtx || kind === "none") return;
+  if (kind === "horn") return busHorn();
+  if (kind === "bell") return schoolBell();
+  chime(); setTimeout(chime, 1600);
+}
+// Two honks of a big two-tone horn
+function busHorn() {
+  const t0 = audioCtx.currentTime + 0.05;
+  const out = audioCtx.createGain(); out.gain.value = 0.32;
+  const lp = audioCtx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1600; lp.Q.value = 0.8;
+  lp.connect(out).connect(audioCtx.destination);
+  [[0, 0.42], [0.55, 0.75]].forEach(([s, len]) => {
+    [311.1, 392.0, 155.6].forEach((f, k) => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.type = k === 2 ? "square" : "sawtooth"; o.frequency.value = f;
+      o.frequency.setValueAtTime(f * 0.97, t0 + s); o.frequency.linearRampToValueAtTime(f, t0 + s + 0.06);
+      const t = t0 + s;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(k === 2 ? 0.18 : 0.3, t + 0.03);
+      g.gain.setValueAtTime(k === 2 ? 0.18 : 0.3, t + len - 0.05);
+      g.gain.linearRampToValueAtTime(0, t + len);
+      o.connect(g).connect(lp); o.start(t); o.stop(t + len + 0.02);
+    });
+  });
+}
+// Old-fashioned ringing school bell (fast hammer strikes), about 2 seconds
+function schoolBell() {
+  const t0 = audioCtx.currentTime + 0.05;
+  const out = audioCtx.createGain(); out.gain.value = 0.22; out.connect(audioCtx.destination);
+  for (let i = 0; i < 36; i++) {
+    const t = t0 + i * 0.055;
+    [[1320, 1], [3630, 0.45], [6900, 0.18]].forEach(([f, amp]) => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(amp, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.001, t + (i === 35 ? 1.2 : 0.16));
+      o.connect(g).connect(out); o.start(t); o.stop(t + (i === 35 ? 1.25 : 0.18));
+    });
+  }
 }
 function chime() {
   if (!audioCtx) return;
@@ -353,9 +408,11 @@ function applyOp(stateIn, op, settings) {
       log({ type: "call", bus: op.bus, group: op.group });
       break;
     }
+    case "leave": { const b = busOf(op.bus); b.arrived = b.arrived || now; if (b.left) return null; b.left = now; log({ type: "leave", bus: op.bus }); break; }
+    case "unleave": { const b = busOf(op.bus); if (!b.left) return null; delete b.left; log({ type: "unleave", bus: op.bus }); break; }
     case "uncall": { const b = busOf(op.bus); delete b.called[op.group]; log({ type: "uncall", bus: op.bus, group: op.group }); break; }
     case "callGroup": {
-      const ids = settings.buses.map((b) => b.id).filter((id) => s.buses[id]?.arrived && !s.buses[id].called[op.group]);
+      const ids = settings.buses.map((b) => b.id).filter((id) => s.buses[id]?.arrived && !s.buses[id].left && !s.buses[id].called[op.group]);
       if (!ids.length) return null;
       ids.forEach((id) => { s.buses[id].called[op.group] = now; log({ type: "call", bus: id, group: op.group }); });
       break;
@@ -395,7 +452,7 @@ function renderHome() {
         <div class="card step s1">
           <h2>Have a school code?</h2>
           <form id="join" class="stack">
-            <input id="join-code" class="code-input" maxlength="6" placeholder="ABC123" autocomplete="off" />
+            <label class="sr" for="join-code">School code or link</label><input id="join-code" class="code-input" maxlength="80" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false" />
             <div class="row">
               <button class="btn primary" type="submit">Open classroom screen</button>
               <button class="btn" type="button" id="join-admin">Master panel</button>
@@ -412,9 +469,10 @@ function renderHome() {
     </div>`;
   const codeEl = document.getElementById("join-code");
   async function open(admin) {
-    const code = codeEl.value.trim().toUpperCase();
     const err = document.getElementById("join-err");
-    if (!/^[A-Z0-9]{6}$/.test(code)) { err.textContent = "School codes are 6 letters/numbers."; return; }
+    const code = extractCode("/" + codeEl.value.trim().replace(/^\/+/, ""));
+    if (!code) { err.textContent = "Type the 6-letter school code (or paste the link)."; return; }
+    if (/admin/i.test(codeEl.value)) admin = true;
     let s = null;
     try { s = await api.getSchool(code); } catch { err.textContent = ERRORS.network; return; }
     if (!s) { err.textContent = ERRORS.not_found; return; }
@@ -490,7 +548,11 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel }) {
             <label class="color-pick">Accent<input type="color" id="t-accent" value="${esc(st.theme.accent)}" /></label>
             <label class="color-pick">Background<input type="color" id="t-bg" value="${esc(st.theme.bg)}" /></label>
           </div>
-          <label class="check"><input type="checkbox" id="s-chime" ${st.chime ? "checked" : ""}/> Play a chime when a group is called</label>
+          <label for="s-sound">Sound when a group is called</label>
+          <div class="row nowrap sound-row">
+            <select id="s-sound">${Object.entries(SOUNDS).map(([k, v]) => `<option value="${k}" ${soundOf(st) === k ? "selected" : ""}>${v}</option>`).join("")}</select>
+            <button type="button" class="btn" id="s-test">▶ Try it</button>
+          </div>
           <label>Classroom screen language
             <select id="s-lang">
               <option value="en" ${st.lang === "en" ? "selected" : ""}>English</option>
@@ -528,7 +590,8 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel }) {
     f.querySelectorAll("[data-bcolor]").forEach((el) => (st.buses[+el.dataset.bcolor].color = el.value));
     f.querySelectorAll("[data-gname]").forEach((el) => (st.groups[+el.dataset.gname].name = el.value.trim()));
     st.theme = { primary: f.querySelector("#t-primary").value, accent: f.querySelector("#t-accent").value, bg: f.querySelector("#t-bg").value };
-    st.chime = f.querySelector("#s-chime").checked;
+    st.sound = f.querySelector("#s-sound").value;
+    st.chime = st.sound !== "none";
     st.lang = f.querySelector("#s-lang").value;
   }
   function wire() {
@@ -557,6 +620,7 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel }) {
     container.querySelectorAll("[data-theme]").forEach((el) => (el.onclick = rerender(() => (st.theme = { ...THEMES[el.dataset.theme] }))));
     ["#t-primary", "#t-accent", "#t-bg"].forEach((s) => (q(s).oninput = () => { readInputs(); applyTheme(st.theme); }));
     q("#s-cancel").onclick = onCancel;
+    q("#s-test").onclick = () => { unlockAudio(); playSound(q("#s-sound").value); };
     q("#settings-form").onsubmit = async (e) => {
       e.preventDefault();
       readInputs();
@@ -751,7 +815,7 @@ function adminPanel(code, pin) {
 
     // Group bar: call a whole group for every arrived bus
     const bar = document.getElementById("group-bar");
-    const arrivedIds = settings.buses.filter((b) => st.buses[b.id]?.arrived).map((b) => b.id);
+    const arrivedIds = settings.buses.filter((b) => st.buses[b.id]?.arrived && !st.buses[b.id].left).map((b) => b.id);
     bar.innerHTML = `<div class="bar-label">Call a group for <b>every bus that's here</b>:</div>` + settings.groups.map((g) => {
       const waiting = arrivedIds.filter((id) => !st.buses[id].called[g.id]).length;
       return `<button class="btn group-call ${waiting ? "" : "done"}" data-callgroup="${g.id}" ${waiting ? "" : "disabled"}>
@@ -764,10 +828,18 @@ function adminPanel(code, pin) {
     grid.innerHTML = settings.buses.map((b) => {
       const s = st.buses[b.id];
       const arrived = !!s?.arrived;
+      const left = !!s?.left;
       const nextG = settings.groups.find((g) => !s?.called?.[g.id]);
-      return `<div class="card bus-card ${arrived ? "arrived" : ""}">
-        <div class="bus-head">${busSVG(b.color, arrived ? "parked" : "faded")}<div><div class="bus-name">${esc(b.name)}</div><div class="muted small">${arrived ? `Here since ${fmtTime(s.arrived)}` : "Not here yet"}</div></div></div>
-        <button class="btn arrive-btn ${arrived ? "on" : ""}" data-arrive="${b.id}">${arrived ? "✓ Arrived" : "Mark arrived"}</button>
+      const allCalled = arrived && !nextG;
+      const sub = left ? `Left campus at ${fmtTime(s.left)}` : arrived ? `Here since ${fmtTime(s.arrived)}` : "Not here yet";
+      return `<div class="card bus-card ${arrived ? "arrived" : ""} ${left ? "gone" : ""}">
+        <div class="bus-head">${busSVG(b.color, left || !arrived ? "faded" : "parked")}<div><div class="bus-name">${esc(b.name)}</div><div class="muted small">${sub}</div></div></div>
+        ${left
+          ? `<button class="btn arrive-btn left-btn on" data-unleave="${b.id}">✓ Left campus</button>`
+          : `<div class="row nowrap two-btn">
+              <button class="btn arrive-btn ${arrived ? "on" : ""}" data-arrive="${b.id}">${arrived ? "✓ Arrived" : "Mark arrived"}</button>
+              ${arrived ? `<button class="btn leave-btn ${allCalled ? "ready" : ""}" data-leave="${b.id}" title="Mark this bus as gone">Bus left</button>` : ""}
+            </div>`}
         <div class="cells">${settings.groups.map((g) => {
           const t = s?.called?.[g.id];
           return `<button class="cell ${t ? "called" : ""} ${!t && arrived && nextG?.id === g.id ? "next" : ""}" data-bus="${b.id}" data-group="${g.id}">
@@ -781,6 +853,11 @@ function adminPanel(code, pin) {
         const name = settings.buses.find((b) => b.id === id)?.name;
         confirmModal(`Undo arrival for the ${esc(name)} bus? This also clears its calls.`, "Undo arrival", () => act({ type: "unarrive", bus: id }));
       } else act({ type: "arrive", bus: id });
+    }));
+    grid.querySelectorAll("[data-leave]").forEach((el) => (el.onclick = () => act({ type: "leave", bus: el.dataset.leave })));
+    grid.querySelectorAll("[data-unleave]").forEach((el) => (el.onclick = () => {
+      const name = settings.buses.find((b) => b.id === el.dataset.unleave)?.name;
+      confirmModal(`Mark the ${esc(name)} bus as still here?`, "Yes, it's still here", () => act({ type: "unleave", bus: el.dataset.unleave }));
     }));
     grid.querySelectorAll("[data-bus]").forEach((el) => (el.onclick = () => {
       const bus = el.dataset.bus, group = el.dataset.group;
@@ -797,7 +874,7 @@ function adminPanel(code, pin) {
     const busName = (id) => settings.buses.find((b) => b.id === id)?.name ?? "?";
     const grpName = (id) => settings.groups.find((g) => g.id === id)?.name ?? "?";
     const lines = st.log.slice().reverse().map((e) => {
-      const what = { arrive: `🚌 ${esc(busName(e.bus))} arrived`, unarrive: `↩︎ ${esc(busName(e.bus))} arrival undone`, call: `📣 ${esc(busName(e.bus))} — called ${esc(grpName(e.group))}`, uncall: `↩︎ ${esc(busName(e.bus))} — ${esc(grpName(e.group))} call undone` }[e.type];
+      const what = { arrive: `🚌 ${esc(busName(e.bus))} arrived`, unarrive: `↩︎ ${esc(busName(e.bus))} arrival undone`, call: `📣 ${esc(busName(e.bus))} — called ${esc(grpName(e.group))}`, uncall: `↩︎ ${esc(busName(e.bus))} — ${esc(grpName(e.group))} call undone`, leave: `👋 ${esc(busName(e.bus))} left campus`, unleave: `↩︎ ${esc(busName(e.bus))} marked as still here` }[e.type];
       return what ? `<li><span class="muted">${fmtTime(e.at)}</span> ${what}</li>` : "";
     }).join("");
     document.getElementById("log").innerHTML = lines || `<li class="muted">Nothing yet today.</li>`;
@@ -1046,7 +1123,7 @@ function renderDisplay(code) {
       <div class="popup-sub">${tr("sendRiders", lang)}</div>
       <div class="muted small">Tap to close</div>
     </div>`;
-    if (settings.chime) { chime(); setTimeout(chime, 1600); }
+    playSound(soundOf(settings));
     const close = () => {
       layer.innerHTML = ""; showing = false; clearTimeout(timer);
       setTimeout(() => { if (!queue.length) resumeVideo(); pump(); }, 300);
@@ -1068,11 +1145,17 @@ function renderDisplay(code) {
     document.getElementById("d-msg").style.display = settings.message ? "" : "none";
 
     // Road with arrived buses
-    const arrived = settings.buses.filter((b) => st.buses[b.id]?.arrived);
+    const arrived = settings.buses.filter((b) => st.buses[b.id]?.arrived && !st.buses[b.id].left);
     const road = document.getElementById("road");
     const have = new Set([...road.querySelectorAll("[data-road]")].map((n) => n.dataset.road));
     const want = new Set(arrived.map((b) => b.id));
-    have.forEach((id) => { if (!want.has(id)) road.querySelector(`[data-road="${id}"]`)?.remove(); });
+    have.forEach((id) => {
+      if (want.has(id)) return;
+      const el = road.querySelector(`[data-road="${id}"]`);
+      if (!el || el.classList.contains("leaving")) return;
+      el.classList.add("leaving");
+      setTimeout(() => el.remove(), 1600);
+    });
     arrived.forEach((b) => {
       if (!have.has(b.id)) {
         const d = document.createElement("div");
@@ -1094,14 +1177,15 @@ function renderDisplay(code) {
       const callsHere = groupsToShow.map((g) => s?.called?.[g.id]).filter(Boolean);
       if (group !== "all" && callsHere.length) {
         const t = callsHere[0];
-        if (now - t < GO_NOW_MS) { status = "go"; label = tr("goNow", lang); sub = tr("sendRiders", lang); }
+        if (now - t < GO_NOW_MS && !s?.left) { status = "go"; label = tr("goNow", lang); sub = tr("sendRiders", lang); }
         else { status = "sent"; label = `✓ ${tr("sent", lang)}`; sub = `${tr("calledAt", lang)} ${fmtTime(t)}`; }
       }
+      if (s?.left) { status = "left"; label = tr("leftCampus", lang); sub = `${tr("leftAt", lang)} ${fmtTime(s.left)}`; }
       const chips = group === "all"
         ? `<div class="chips">${settings.groups.map((g) => { const t = s?.called?.[g.id]; const cls = t ? (now - t < GO_NOW_MS ? "go" : "sent") : ""; return `<span class="g-chip ${cls}">${esc(g.name)}${t ? " ✓" : ""}</span>`; }).join("")}</div>`
         : "";
       return `<div class="d-card ${status}" style="--bus:${esc(b.color)}">
-        <div class="d-bus">${busSVG(b.color, status === "go" ? "bounce" : status === "away" ? "faded" : "")}</div>
+        <div class="d-bus">${busSVG(b.color, status === "go" ? "bounce" : status === "away" || status === "left" ? "faded" : "")}</div>
         <div class="d-name">${esc(b.name)}</div>
         <div class="d-status">${label}</div>
         ${sub ? `<div class="d-sub">${sub}</div>` : ""}
