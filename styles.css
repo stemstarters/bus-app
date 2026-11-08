@@ -371,9 +371,11 @@ label.color-pick { flex-direction: row; align-items: center; gap: 8px; }
 .has-video .d-card.left { padding-top: 6px; padding-bottom: 6px; }
 .has-video .d-status.pill { justify-self: start; }
 
-/* street zones: here on the left, gone at the far end */
-.road { justify-content: space-between; }
+/* street: one line of buses facing right; "here" fills in from the middle, "gone" parks at the right end */
+.road { justify-content: flex-start; gap: 0; }
 .road-zone { position: relative; z-index: 1; display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
-.road-zone.gone { justify-content: flex-end; margin-left: auto; }
+.road-zone.here { flex: 1 1 auto; justify-content: flex-end; min-width: 0; }
+.road-zone.gone { flex: 0 1 auto; justify-content: flex-end; }
+.road-zone.gone:not(:empty) { margin-left: 56px; }
 .road-bus.parked-gone { opacity: .55; }
 .road-bus.parked-gone span::after { content: " 👋"; }

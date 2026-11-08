@@ -1148,31 +1148,39 @@ function renderDisplay(code) {
     document.getElementById("d-msg").innerHTML = settings.message ? `💬 ${esc(settings.message)}` : "";
     document.getElementById("d-msg").style.display = settings.message ? "" : "none";
 
-    // Street: buses that are here park on the left; buses that left move to the far end.
+    // Street: a line of buses facing right. New arrivals pull in behind (to the left of)
+    // the buses already here; a bus that leaves drives to the right end and lines up
+    // behind (to the left of) buses that already left. Nobody swaps places.
     const road = document.getElementById("road");
     const hereZone = document.getElementById("road-here");
     const goneZone = document.getElementById("road-gone");
-    const placeOf = (b) => { const x = st.buses[b.id]; return !x?.arrived ? null : x.left ? "gone" : "here"; };
-    settings.buses.forEach((b) => {
-      const place = placeOf(b);
+    const beforeX = new Map([...road.querySelectorAll("[data-road]")].map((n) => [n.dataset.road, n.getBoundingClientRect().left]));
+    const info = (b) => st.buses[b.id] || {};
+    const hereList = settings.buses.filter((b) => info(b).arrived && !info(b).left).sort((x, y) => info(y).arrived - info(x).arrived);
+    const goneList = settings.buses.filter((b) => info(b).left).sort((x, y) => info(y).left - info(x).left);
+    const keep = new Set([...hereList, ...goneList].map((b) => b.id));
+    road.querySelectorAll("[data-road]").forEach((n) => { if (!keep.has(n.dataset.road)) n.remove(); });
+    const busEl = (b) => {
       let el = road.querySelector(`[data-road="${b.id}"]`);
-      if (!place) { el?.remove(); return; }
-      const zone = place === "gone" ? goneZone : hereZone;
       if (!el) {
         el = document.createElement("div");
         el.className = "road-bus";
         el.dataset.road = b.id;
         el.innerHTML = busSVG(b.color, "drive-in") + `<span>${esc(b.name)}</span>`;
-        zone.appendChild(el);
-      } else if (el.parentElement !== zone) {
-        // Drive from its parking spot down to the other end of the street
-        const before = el.getBoundingClientRect();
-        zone.appendChild(el);
-        const after = el.getBoundingClientRect();
-        el.querySelector(".bus-svg")?.classList.remove("drive-in");
-        el.animate([{ transform: `translateX(${before.left - after.left}px)` }, { transform: "translateX(0)" }], { duration: 1400, easing: "ease-in-out" });
       }
-      el.classList.toggle("parked-gone", place === "gone");
+      return el;
+    };
+    hereList.forEach((b) => { const el = busEl(b); el.classList.remove("parked-gone"); hereZone.appendChild(el); });
+    goneList.forEach((b) => { const el = busEl(b); el.classList.add("parked-gone"); goneZone.appendChild(el); });
+    // Slide anything that moved from where it was to where it is now
+    road.querySelectorAll("[data-road]").forEach((el) => {
+      const was = beforeX.get(el.dataset.road);
+      if (was === undefined) return;
+      const dx = was - el.getBoundingClientRect().left;
+      if (Math.abs(dx) > 1) {
+        el.querySelector(".bus-svg")?.classList.remove("drive-in");
+        el.animate([{ transform: `translateX(${dx}px)` }, { transform: "translateX(0)" }], { duration: Math.min(2200, 500 + Math.abs(dx) * 1.6), easing: "ease-in-out" });
+      }
     });
     road.classList.toggle("empty", !road.querySelector("[data-road]"));
     road.dataset.empty = T.noBusesYet[lang === "es" ? 1 : 0];
