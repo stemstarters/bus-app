@@ -1020,6 +1020,10 @@ function renderDisplay(code) {
     destroyPlayer();
     const v = videoUrl ? parseVideo(videoUrl) : null;
     document.querySelector(".display")?.classList.toggle("has-video", !!v);
+    // With a video, the street moves under the video; without one, back above the bus cards.
+    const road = document.getElementById("road");
+    const side = document.querySelector(".d-side");
+    if (road && side) { if (v) wrap.after(road); else side.prepend(road); }
     if (!v) {
       wrap.innerHTML = `<div class="card step s2 video-card">
         <h2><span class="v-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><rect x="3" y="5" width="18" height="14" rx="4" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M10 9.2v5.6l4.8-2.8z" fill="currentColor"/></svg></span> Watch while you wait</h2>
