@@ -379,3 +379,15 @@ label.color-pick { flex-direction: row; align-items: center; gap: 8px; }
 .road-zone.gone:not(:empty) { margin-left: 56px; }
 .road-bus.parked-gone { opacity: .55; }
 .road-bus.parked-gone span::after { content: " 👋"; }
+
+/* ---------- home: remembered schools + forgot code ---------- */
+.recent-card, .find-card { margin-top: 28px; }
+.recent-list { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.recent-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: #E1FBF5; border-radius: 20px; padding: 10px 14px; }
+.recent-name { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 1.1rem; }
+.recent-code { font: 800 1.1rem var(--head); letter-spacing: .18em; color: #13806B; }
+.recent-row a.btn, .share-row a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+.find-form { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: 14px; align-items: end; margin-top: 10px; }
+.find-form label { margin: 0; }
+.share-row.found { margin-top: 14px; background: #FFF6D6; }
+@media (max-width: 720px) { .find-form { grid-template-columns: minmax(0, 1fr); } }

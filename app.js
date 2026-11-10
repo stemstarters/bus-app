@@ -285,6 +285,17 @@ function makeDemoApi() {
       save(code, { settings, state: { version: 0 }, pin });
       return { ok: true, code };
     },
+    async findSchool(name, pin) {
+      const norm = (x) => String(x || "").trim().replace(/\s+/g, " ").toLowerCase();
+      const out = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k.startsWith("busdemo:")) continue;
+        const v = store.get(k);
+        if (v && norm(v.settings?.name) === norm(name) && v.pin === pin) out.push({ code: k.slice(8), name: v.settings.name });
+      }
+      return out.length ? { ok: true, schools: out } : { ok: false, error: "no_match" };
+    },
     async getSchool(code) { const s = load(code); return s ? { code, settings: s.settings, state: s.state } : null; },
     async checkPin(code, pin) { const s = load(code); if (!s) return { ok: false, error: "not_found" }; return s.pin === pin ? { ok: true } : { ok: false, error: "bad_pin" }; },
     async saveState(code, pin, state, expected) {
@@ -341,6 +352,7 @@ async function makeSupabaseApi() {
       return data;
     },
     checkPin: (code, pin) => rpc("bus_check_pin", { p_code: code, p_pin: pin }),
+    findSchool: (name, pin) => rpc("bus_find_school", { p_name: name, p_pin: pin }),
     saveState: (code, pin, state, expected) => rpc("bus_save_state", { p_code: code, p_pin: pin, p_state: state, p_expected_version: expected }),
     saveSettings: (code, pin, settings, newPin) => rpc("bus_save_settings", { p_code: code, p_pin: pin, p_settings: settings, p_new_pin: newPin || null }),
     subscribe(code, fn) {
@@ -441,6 +453,15 @@ function demoBanner() {
 }
 
 /* ================================ HOME ================================= */
+/* ------------------- schools remembered on this device ------------------ */
+function rememberSchool(code, name) {
+  if (!code) return;
+  const list = (store.get("busrecent") || []).filter((x) => x.code !== code);
+  list.unshift({ code, name: name || "", at: Date.now() });
+  store.set("busrecent", list.slice(0, 12));
+}
+function forgetSchool(code) { store.set("busrecent", (store.get("busrecent") || []).filter((x) => x.code !== code)); }
+
 function renderHome() {
   applyTheme(THEMES.STEMstarters);
   document.title = "Bus Call";
@@ -466,7 +487,49 @@ function renderHome() {
           <button class="btn primary big" id="start-setup">Create a school</button>
         </div>
       </div>
+      ${(() => {
+        const recent = store.get("busrecent") || [];
+        if (!recent.length) return "";
+        return `<section class="card step s3 recent-card">
+          <h2>Your schools on this device</h2>
+          <div class="recent-list">${recent.map((r) => `
+            <div class="recent-row">
+              <div class="recent-name"><b>${esc(r.name || "School")}</b><span class="recent-code">${esc(r.code)}</span></div>
+              <div class="row">
+                <a class="btn small" href="/${esc(r.code)}">Classroom screen</a>
+                <a class="btn small primary" href="/${esc(r.code)}/admin">Master panel</a>
+                <button class="icon-btn" type="button" data-forget="${esc(r.code)}" aria-label="Remove ${esc(r.name || r.code)} from this list"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
+              </div>
+            </div>`).join("")}</div>
+        </section>`;
+      })()}
+      <section class="card step s4 find-card">
+        <h2>Forgot your school code?</h2>
+        <p class="muted">Type your school name exactly as you set it up, plus your master panel PIN.</p>
+        <form id="find" class="find-form">
+          <label>School name<input id="find-name" autocomplete="organization" placeholder="e.g. Sunnyside Elementary" required /></label>
+          <label>PIN<input id="find-pin" type="password" inputmode="numeric" autocomplete="current-password" required /></label>
+          <button class="btn primary" type="submit">Find my code</button>
+        </form>
+        <p class="err" id="find-err"></p>
+        <div id="find-result"></div>
+      </section>
     </div>`;
+  document.querySelectorAll("[data-forget]").forEach((b) => (b.onclick = () => { forgetSchool(b.dataset.forget); renderHome(); }));
+  document.querySelectorAll(".recent-row a").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
+  document.getElementById("find").onsubmit = async (e) => {
+    e.preventDefault();
+    const err = document.getElementById("find-err"), out = document.getElementById("find-result");
+    err.textContent = ""; out.innerHTML = "";
+    const name = document.getElementById("find-name").value.trim();
+    const pin = document.getElementById("find-pin").value.trim();
+    const r = await api.findSchool(name, pin);
+    if (!r?.ok) { err.textContent = r?.error === "locked" ? ERRORS.locked : r?.error === "no_match" ? "No school matched that name and PIN. Check the spelling of the school name." : (ERRORS[r?.error] || ERRORS.network); return; }
+    r.schools.forEach((x) => rememberSchool(x.code, x.name));
+    out.innerHTML = r.schools.map((x) => `<div class="share-row found"><div><b>${esc(x.name)}</b><div class="big-code">${esc(x.code)}</div></div>
+      <div class="row"><a class="btn small" href="/${esc(x.code)}">Classroom screen</a><a class="btn small primary" href="/${esc(x.code)}/admin">Master panel</a></div></div>`).join("");
+    out.querySelectorAll("a").forEach((a) => (a.onclick = (ev) => { ev.preventDefault(); sess.set("buspin:" + a.getAttribute("href").split("/")[1], pin); go(a.getAttribute("href")); }));
+  };
   const codeEl = document.getElementById("join-code");
   async function open(admin) {
     const err = document.getElementById("join-err");
@@ -656,6 +719,7 @@ function renderSetup() {
       const r = await api.createSchool(settings, pin);
       if (!r?.ok) return ERRORS[r?.error] || ERRORS.network;
       sess.set("buspin:" + r.code, pin);
+      rememberSchool(r.code, settings.name);
       renderCreated(r.code, settings);
     },
   });
@@ -737,6 +801,7 @@ function adminPanel(code, pin) {
     if (err) { setStatus("offline"); return; }
     if (!s) { $app.innerHTML = `<div class="center-card card"><h2>${ERRORS.not_found}</h2><a href="/">Home</a></div>`; return; }
     setStatus("live");
+    if (!school) rememberSchool(code, s.settings.name);
     school = s;
     if (!document.getElementById("admin-root")) shell();
     draw();
@@ -947,6 +1012,7 @@ function renderDisplay(code) {
     const dot = document.getElementById("live-dot");
     if (err) { dot && (dot.className = "live-dot offline"); return; }
     if (!s) { applyTheme(THEMES.STEMstarters); $app.innerHTML = `<div class="center-card card"><h2>${ERRORS.not_found}</h2><p><a href="/">Home</a></p></div>`; return; }
+    if (!school) rememberSchool(code, s.settings.name);
     school = s;
     applyTheme(s.settings.theme);
     document.title = s.settings.name;
