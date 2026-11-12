@@ -1,7 +1,7 @@
 import { CONFIG } from "./config.js";
 
 /* =====================================================================
-   Dismissly — one page, three screens:
+   Dismissal Magic — one page, three screens:
      /               → home (create a school / enter a code)
      /CODE           → classroom screen
      /CODE/admin     → master panel (PIN)
@@ -132,7 +132,7 @@ function luminance(hex) {
 function chip(n, small = false) {
   return `<span class="nchip c${(n - 1) % 4}${small ? " sm" : ""}" aria-hidden="true"><b>${n}</b></span>`;
 }
-function headBlock({ pill = "Dismissly", title, sub = "", right = "", left = "", compact = false, titleId = "" }) {
+function headBlock({ pill = "✨ Dismissal Magic", title, sub = "", right = "", left = "", compact = false, titleId = "" }) {
   return `<header class="head-block${compact ? " compact" : ""}">
     <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span>
     <div class="head-text">
@@ -464,11 +464,11 @@ function forgetSchool(code) { store.set("busrecent", (store.get("busrecent") || 
 
 function renderHome() {
   applyTheme(THEMES.STEMstarters);
-  document.title = "Dismissly — quiet bus calls for every classroom";
+  document.title = "Dismissal Magic — quiet bus calls for every classroom";
   $app.innerHTML = `
     ${demoBanner()}
     <div class="home">
-      ${headBlock({ pill: "For schools", title: "Dismissly", sub: "Quiet bus calls for every classroom. Call buses by grade. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed.", right: `<div class="head-bus">${busSVG("#ffd23f", "drive-in")}</div>` })}
+      ${headBlock({ pill: "For schools", title: "Dismissal Magic", sub: "Quiet bus calls, like magic. Call buses by grade. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed.", right: `<div class="head-bus">${busSVG("#ffd23f", "drive-in")}</div>` })}
       <div class="home-grid">
         <div class="card step s1">
           <h2>Have a school code?</h2>
@@ -1060,7 +1060,7 @@ function renderDisplay(code) {
   function shell() {
     $app.innerHTML = `${demoBanner()}
       <div class="display">
-        ${headBlock({ compact: true, pill: `<span id="live-dot" class="live-dot live"></span> Dismissly`, title: "", titleId: "d-title", right: `<button class="chip" id="d-group"></button>` })}
+        ${headBlock({ compact: true, pill: `<span id="live-dot" class="live-dot live"></span> Dismissal Magic`, title: "", titleId: "d-title", right: `<button class="chip" id="d-group"></button>` })}
         <div class="message" id="d-msg"></div>
         <div class="d-main">
           <section id="video-wrap"></section>

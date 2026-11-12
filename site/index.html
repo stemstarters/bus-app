@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dismissly — Quiet bus calls for every classroom | School dismissal app</title>
-  <meta name="description" content="Dismissly is a simple school dismissal app: the office taps when a bus arrives, and classroom screens light up so teachers know exactly when to send riders down. No intercom, no student data. Free 1-month trial." />
-  <link rel="canonical" href="https://dismissly.com/" />
-  <meta property="og:title" content="Dismissly — Quiet bus calls for every classroom" />
+  <title>Dismissal Magic — Quiet bus calls for every classroom | School dismissal app</title>
+  <meta name="description" content="Dismissal Magic is a simple school dismissal app: the office taps when a bus arrives, and classroom screens light up so teachers know exactly when to send riders down. No intercom, no student data. Free 1-month trial." />
+  <link rel="canonical" href="https://dismissalmagic.com/" />
+  <meta property="og:title" content="Dismissal Magic — Quiet bus calls for every classroom" />
   <meta property="og:description" content="Call buses by grade. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://dismissly.com/" />
+  <meta property="og:url" content="https://dismissalmagic.com/" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚌</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -34,7 +34,11 @@
     .nav { position: sticky; top: 0; z-index: 20; background: rgba(253, 246, 227, .92); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(58,15,101,.08); }
     .nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 76px; }
     .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--purple-dark); font: 800 1.7rem/1 var(--head); }
-    .brand svg { width: 54px; height: auto; }
+    .brand-bus { position: relative; display: inline-block; }
+    .brand-bus > svg:first-child { width: 54px; height: 32px; display: block; }
+    .brand .spark { position: absolute; width: 20px; height: 20px; right: -9px; top: -10px; animation: twinkle 2.4s ease-in-out infinite; }
+    .brand em { font-style: normal; color: var(--purple); }
+    @keyframes twinkle { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.25) rotate(20deg); } }
     .links { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
     .links a { color: var(--ink); text-decoration: none; font-weight: 600; font-size: .98rem; }
     .links a:hover { color: var(--purple); }
@@ -160,15 +164,17 @@
     @media (max-width: 520px) {
       .wrap { padding: 0 16px; }
       .links .btn:not(.primary) { display: none; }
+      .links .btn.primary { white-space: nowrap; font-size: .9rem; padding: 8px 14px; min-height: 40px; }
+      .brand { font-size: 1.25rem; }
       .brand { font-size: 1.4rem; }
-      .brand svg { width: 44px; }
+      .brand-bus > svg:first-child { width: 44px; height: 26px; }
     }
   </style>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Dismissly",
+    "name": "Dismissal Magic",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Web browser",
     "description": "School dismissal app for quiet bus calls: the office taps when a bus arrives and classroom screens show when to send riders down.",
@@ -212,14 +218,14 @@
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="/" aria-label="Dismissly home"><svg aria-hidden="true"><use href="#bus"/></svg>Dismissly</a>
+    <a class="brand" href="/" aria-label="Dismissal Magic home"><span class="brand-bus"><svg aria-hidden="true"><use href="#bus"/></svg><svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span>Dismissal <em>Magic</em></span></a>
     <nav class="links" aria-label="Main">
       <a href="#how">How it works</a>
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
-      <a class="btn" href="https://app.dismissly.com/">Log in</a>
-      <a class="btn primary" href="https://app.dismissly.com/">Start free trial</a>
+      <a class="btn" href="https://app.dismissalmagic.com/">Log in</a>
+      <a class="btn primary" href="https://app.dismissalmagic.com/">Start free trial</a>
     </nav>
   </div>
 </header>
@@ -230,11 +236,11 @@
       <div class="hero-card">
         <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span>
         <div class="hero-text">
-          <span class="pill">School dismissal, made calm</span>
+          <span class="pill">✨ Quiet bus calls, like magic</span>
           <h1>Quiet bus calls for every classroom.</h1>
           <p class="lead">The office taps when a bus arrives. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed.</p>
           <div class="cta">
-            <a class="btn yellow big" href="https://app.dismissly.com/">Start your free month</a>
+            <a class="btn yellow big" href="https://app.dismissalmagic.com/">Start your free month</a>
             <a class="btn big" href="#how">See how it works</a>
           </div>
           <p class="note">No credit card to try. Works on any classroom screen.</p>
@@ -258,7 +264,7 @@
     <div class="wrap">
       <span class="eyebrow">How it works</span>
       <h2 class="section-title">Set it up in minutes. Run dismissal in seconds.</h2>
-      <p class="section-lead">No apps to install, no student rosters to import. If a screen can open a web page, it can run Dismissly.</p>
+      <p class="section-lead">No apps to install, no student rosters to import. If a screen can open a web page, it can run Dismissal Magic.</p>
       <div class="grid3">
         <div class="card c-purple"><div class="chip ch0"><span>1</span></div><h3>Set up your school</h3><p>Add your buses by color or number, choose how you call grades (like K–1, then 2–3, then 4–5), and pick your colors and sound.</p></div>
         <div class="card c-pink"><div class="chip ch1"><span>2</span></div><h3>Tap when a bus arrives</h3><p>Whoever runs dismissal marks buses as they pull in and calls each grade group with one tap. Backups sign in with your school's PIN.</p></div>
@@ -289,7 +295,7 @@
         <div>
           <span class="eyebrow" style="color:var(--mint)">Privacy first</span>
           <h2>No student data. Ever.</h2>
-          <p>Dismissly only knows your buses, your grade groups and what time things happen. There's nothing about students to protect, because we never collect it.</p>
+          <p>Dismissal Magic only knows your buses, your grade groups and what time things happen. There's nothing about students to protect, because we never collect it.</p>
         </div>
         <ul class="checks">
           <li>No student names or rosters</li>
@@ -311,20 +317,20 @@
           <h3>Free trial</h3>
           <div class="price">$0 <small>for 1 month</small></div>
           <ul><li>Every feature</li><li>Unlimited classroom screens</li><li>No credit card needed</li></ul>
-          <a class="btn" href="https://app.dismissly.com/">Start free trial</a>
+          <a class="btn" href="https://app.dismissalmagic.com/">Start free trial</a>
         </div>
         <div class="plan featured">
           <span class="tag">Founding schools</span>
           <h3>Founding school</h3>
           <div class="price">$149 <small>/ year</small></div>
           <ul><li>Every feature</li><li>Price locked in while you stay subscribed</li><li>Help shape new features</li></ul>
-          <a class="btn primary" href="https://app.dismissly.com/">Become a founding school</a>
+          <a class="btn primary" href="https://app.dismissalmagic.com/">Become a founding school</a>
         </div>
         <div class="plan">
           <h3>School plan</h3>
           <div class="price">$249 <small>/ year</small></div>
           <ul><li>Every feature</li><li>Unlimited classroom screens</li><li>Email support</li></ul>
-          <a class="btn" href="https://app.dismissly.com/">Start free trial</a>
+          <a class="btn" href="https://app.dismissalmagic.com/">Start free trial</a>
         </div>
       </div>
       <p class="fine">Buying for several schools? <a href="#contact">Ask about district pricing.</a></p>
@@ -340,8 +346,8 @@
         <details><summary>What screens does it work on?</summary><p>Anything with a web browser: interactive boards, classroom TVs, Chromebooks, laptops and tablets. There's nothing to install.</p></details>
         <details><summary>Who can call buses?</summary><p>Anyone with your school's master panel PIN—so a sub, office aide or assistant principal can run dismissal when you're out. You can change the PIN anytime.</p></details>
         <details><summary>What if the internet hiccups?</summary><p>Classroom screens keep checking in on their own. If a screen loses its connection, a small dot turns orange, and it catches up as soon as it's back online.</p></details>
-        <details><summary>Do you collect any student information?</summary><p>No. Dismissly stores your buses, grade groups and times—never student names, rosters or photos.</p></details>
-        <details><summary>Can we use it for car riders and walkers?</summary><p>Today Dismissly is built for bus calls. Car rider and walker calls are on the way, and founding schools help decide what comes next.</p></details>
+        <details><summary>Do you collect any student information?</summary><p>No. Dismissal Magic stores your buses, grade groups and times—never student names, rosters or photos.</p></details>
+        <details><summary>Can we use it for car riders and walkers?</summary><p>Today Dismissal Magic is built for bus calls. Car rider calls (Carpool Magic) and walker calls are on the way, and founding schools help decide what comes next.</p></details>
         <details><summary>What happens after the free month?</summary><p>Subscribe to keep going. If you don't, your setup is saved, so you can pick up right where you left off whenever you're ready.</p></details>
       </div>
     </div>
@@ -353,7 +359,7 @@
       <div>
         <span class="eyebrow">About</span>
         <h2 class="section-title">Made by STEMstarters. Built by a teacher.</h2>
-        <p class="section-lead" style="margin-bottom:0">Dismissly was built by an elementary school teacher who was tired of intercom interruptions and "Is that our bus?" at the end of every day. It's made for real classrooms: simple for the office, calm for teachers, and fun for kids.</p>
+        <p class="section-lead" style="margin-bottom:0">Dismissal Magic was built by an elementary school teacher who was tired of intercom interruptions and "Is that our bus?" at the end of every day. It's made for real classrooms: simple for the office, calm for teachers, and fun for kids.</p>
       </div>
     </div>
   </section>
@@ -365,8 +371,8 @@
         <h2>Ready for a quieter dismissal?</h2>
         <p>Set up your school in a few minutes and try every feature free for a month.</p>
         <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-          <a class="btn yellow big" href="https://app.dismissly.com/">Start your free month</a>
-          <a class="btn big" href="mailto:hello@stemstarters.com?subject=Dismissly%20question">Email us</a>
+          <a class="btn yellow big" href="https://app.dismissalmagic.com/">Start your free month</a>
+          <a class="btn big" href="mailto:hello@stemstarters.com?subject=Dismissal%20Magic%20question">Email us</a>
         </div>
       </div>
     </div>
@@ -375,7 +381,7 @@
 
 <footer>
   <div class="wrap">
-    <span>© 2026 STEMstarters LLC · Dismissly</span>
+    <span>© 2026 STEMstarters LLC · Dismissal Magic</span>
     <span><a href="mailto:hello@stemstarters.com">hello@stemstarters.com</a></span>
   </div>
 </footer>
@@ -387,7 +393,7 @@
   "mainEntity": [
     {"@type": "Question", "name": "Do teachers need an account or login?", "acceptedAnswer": {"@type": "Answer", "text": "No. Teachers open your school's classroom link once, pick their grade group, and leave it up."}},
     {"@type": "Question", "name": "What screens does it work on?", "acceptedAnswer": {"@type": "Answer", "text": "Anything with a web browser: interactive boards, classroom TVs, Chromebooks, laptops and tablets. There's nothing to install."}},
-    {"@type": "Question", "name": "Do you collect any student information?", "acceptedAnswer": {"@type": "Answer", "text": "No. Dismissly stores your buses, grade groups and times—never student names, rosters or photos."}}
+    {"@type": "Question", "name": "Do you collect any student information?", "acceptedAnswer": {"@type": "Answer", "text": "No. Dismissal Magic stores your buses, grade groups and times—never student names, rosters or photos."}}
   ]
 }
 </script>
