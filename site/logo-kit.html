@@ -63,8 +63,9 @@ function drawWord(ctx, text, x, y, size, color, star = starImg) {
     ctx.fillText(ch, cx, y);
     const w = ctx.measureText(ch).width;
     if (ch === "ı") {
-      const s = size * 0.44;
-      ctx.drawImage(star, cx + w / 2 - s / 2, y - size * 0.98, s, s);
+      const s = size * 0.4;
+      const asc = ctx.measureText("ı").actualBoundingBoxAscent; // top of the i's stem
+      ctx.drawImage(star, cx + w / 2 - s / 2, y - asc - s * 0.92, s, s);
     }
     cx += w;
   }
