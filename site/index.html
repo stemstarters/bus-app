@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dismissly — Quiet bus calls for every classroom | School dismissal app</title>
+  <meta name="description" content="Dismissly is a simple school dismissal app: the office taps when a bus arrives, and classroom screens light up so teachers know exactly when to send riders down. No intercom, no student data. Free 1-month trial." />
+  <link rel="canonical" href="https://dismissly.com/" />
+  <meta property="og:title" content="Dismissly — Quiet bus calls for every classroom" />
+  <meta property="og:description" content="Call buses by grade. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://dismissly.com/" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚌</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --purple: #9246DD; --purple-dark: #3A0F65; --pink: #FC52B3; --mint: #8DEFDA; --teal: #2FC2A3; --yellow: #F8C631;
+      --bg: #fdf6e3; --ink: #2b2d42; --muted: #5c5f78; --card: #fff;
+      --head: "League Spartan", "Montserrat", "Segoe UI", system-ui, sans-serif;
+      --body: "Poppins", "Segoe UI", system-ui, sans-serif;
+      --shadow: 0 14px 30px -18px rgba(58, 15, 101, .5);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.55 var(--body); }
+    h1, h2, h3 { font-family: var(--head); font-weight: 800; line-height: 1.05; margin: 0 0 .5em; }
+    a { color: var(--purple); }
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+    /* nav */
+    .nav { position: sticky; top: 0; z-index: 20; background: rgba(253, 246, 227, .92); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(58,15,101,.08); }
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 76px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--purple-dark); font: 800 1.7rem/1 var(--head); }
+    .brand svg { width: 54px; height: auto; }
+    .links { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+    .links a { color: var(--ink); text-decoration: none; font-weight: 600; font-size: .98rem; }
+    .links a:hover { color: var(--purple); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px;
+      font: 700 1rem/1 var(--body); text-decoration: none; cursor: pointer;
+      border: 3px solid var(--ink); border-radius: 999px; padding: 10px 22px;
+      background: #fff; color: var(--ink); box-shadow: 0 4px 0 var(--ink); transition: transform .08s, box-shadow .08s;
+    }
+    .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+    .btn.primary { background: var(--purple); color: #fff; }
+    .btn.yellow { background: var(--yellow); color: var(--purple-dark); border-color: var(--purple-dark); box-shadow: 0 4px 0 var(--purple-dark); }
+    .btn.big { font-size: 1.15rem; padding: 14px 30px; min-height: 56px; }
+    .links .btn { color: var(--ink); }
+    .links .btn.primary { color: #fff; }
+    .menu-toggle { display: none; }
+
+    /* hero */
+    .hero { padding: 48px 0 70px; }
+    .hero-card {
+      position: relative; overflow: hidden; isolation: isolate; background: var(--purple); color: #fff; border-radius: 40px;
+      padding: 56px 56px 0; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 36px; align-items: end;
+      box-shadow: 0 24px 40px -24px rgba(58, 15, 101, .8);
+    }
+    .blob { position: absolute; border-radius: 50%; z-index: -1; pointer-events: none; }
+    .b1 { right: -80px; top: -110px; width: 340px; height: 340px; background: var(--pink); opacity: .35; }
+    .b2 { left: 30%; bottom: -140px; width: 300px; height: 300px; background: var(--mint); opacity: .22; }
+    .pill { display: inline-block; background: var(--yellow); color: var(--purple-dark); font-weight: 700; font-size: .95rem; padding: 6px 16px; border-radius: 999px; margin-bottom: 16px; }
+    .hero h1 { font-size: clamp(2.5rem, 5vw, 4.1rem); color: #fff; }
+    .hero p.lead { font-size: 1.25rem; font-weight: 500; opacity: .95; max-width: 520px; margin: 0 0 26px; }
+    .hero-text { padding-bottom: 56px; }
+    .hero .cta { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+    .hero .note { margin-top: 14px; font-size: .95rem; opacity: .9; }
+    .hero .btn { border-color: var(--purple-dark); box-shadow: 0 4px 0 var(--purple-dark); }
+
+    /* screen mock */
+    .screen { background: #2b2d42; border-radius: 26px 26px 0 0; padding: 14px 14px 0; box-shadow: 0 -10px 40px rgba(0,0,0,.2); }
+    .screen-inner { position: relative; overflow: hidden; border-radius: 16px 16px 0 0; background: radial-gradient(circle at 50% 40%, #fff2c2 0, #F8C631 75%); display: grid; place-items: center; padding: 26px 0 72px; }
+    .screen-inner::before { content: ""; position: absolute; inset: -40%; background: repeating-conic-gradient(rgba(255,255,255,.2) 0 10deg, transparent 10deg 20deg); animation: spin 40s linear infinite; }
+    .mock-pop { position: relative; z-index: 1; background: #fff; border: 5px solid var(--ink); border-radius: 28px; padding: 14px 22px 16px; text-align: center; color: var(--ink); width: 74%; box-shadow: 0 10px 0 rgba(0,0,0,.18); animation: pop 3.2s cubic-bezier(.2,1.6,.4,1) infinite; }
+    .mock-pop svg { width: 58%; aspect-ratio: 220 / 128; height: auto; display: block; margin: 0 auto; }
+    .mock-title { font: 800 clamp(1.4rem, 3vw, 2.2rem)/1 var(--head); margin-top: 4px; }
+    .mock-group { display: inline-block; margin: 8px 0 4px; font: 800 clamp(1.1rem, 2.4vw, 1.6rem)/1.2 var(--head); background: var(--yellow); border: 3px solid var(--ink); border-radius: 999px; padding: 3px 20px 0; }
+    .mock-sub { font-weight: 700; font-size: .95rem; }
+    .road { position: absolute; left: 0; right: 0; bottom: 0; height: 48px; background: #5c6378; border-top: 5px solid var(--purple-dark); }
+    .road::after { content: ""; position: absolute; left: 0; right: 0; top: 46%; border-top: 4px dashed var(--yellow); }
+
+    /* sections */
+    section.block { padding: 70px 0; }
+    .eyebrow { display: inline-block; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: .12em; font-size: .85rem; margin-bottom: 8px; }
+    .section-title { font-size: clamp(2rem, 4vw, 3rem); max-width: 760px; }
+    .section-lead { font-size: 1.15rem; color: var(--muted); max-width: 680px; margin: 0 0 36px; }
+    .card { background: var(--card); border-radius: 28px; border: 4px solid; padding: 28px; box-shadow: var(--shadow); }
+    .c-purple { border-color: var(--purple); } .c-pink { border-color: var(--pink); } .c-teal { border-color: var(--teal); } .c-yellow { border-color: var(--yellow); }
+    .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; }
+    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 26px; }
+    .chip { flex: none; width: 64px; height: 64px; border-radius: 50%; border: 5px solid; display: grid; place-items: center; font: 800 1.9rem/1 var(--head); margin-bottom: 16px; box-shadow: 0 8px 18px -12px rgba(58,15,101,.6); }
+    .chip span { margin-top: 3px; }
+    .ch0 { color: #6B2FB3; border-color: var(--purple); background: #F3EAFD; transform: rotate(-6deg); }
+    .ch1 { color: #B8127A; border-color: var(--pink); background: #FFE9F5; transform: rotate(5deg); }
+    .ch2 { color: #13806B; border-color: var(--teal); background: #E1FBF5; transform: rotate(-4deg); }
+    .ch3 { color: #7A5A00; border-color: var(--yellow); background: #FFF6D6; transform: rotate(6deg); }
+    .card h3 { font-size: 1.5rem; }
+    .card p { margin: 0; color: var(--muted); }
+
+    .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+    .feature { background: #fff; border-radius: 24px; padding: 24px; box-shadow: var(--shadow); }
+    .ficon { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 12px; }
+    .ficon svg { width: 28px; height: 28px; }
+    .feature h3 { font-size: 1.3rem; margin-bottom: 6px; }
+    .feature p { margin: 0; color: var(--muted); font-size: .98rem; }
+
+    .privacy { background: var(--purple-dark); color: #fff; border-radius: 40px; padding: 56px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+    .privacy h2 { font-size: clamp(2rem, 4vw, 3rem); color: #fff; }
+    .privacy p { opacity: .9; font-size: 1.1rem; }
+    .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+    .checks li { background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.18); border-radius: 18px; padding: 12px 16px 12px 52px; position: relative; font-weight: 600; }
+    .checks li::before { content: ""; position: absolute; left: 14px; top: 50%; width: 26px; height: 26px; margin-top: -13px; border-radius: 50%; background: var(--mint) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='%233A0F65' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px no-repeat; }
+
+    .pricing { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
+    .plan { background: #fff; border-radius: 30px; border: 4px solid rgba(43,45,66,.12); padding: 30px 28px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); position: relative; }
+    .plan.featured { border-color: var(--purple); transform: translateY(-8px); }
+    .plan .tag { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); background: var(--pink); color: #fff; font-weight: 700; font-size: .85rem; padding: 6px 16px; border-radius: 999px; white-space: nowrap; }
+    .plan h3 { font-size: 1.5rem; margin: 0; }
+    .price { font: 800 3rem/1 var(--head); color: var(--purple-dark); }
+    .price small { font: 600 1rem var(--body); color: var(--muted); }
+    .plan ul { list-style: none; padding: 0; margin: 4px 0 8px; display: grid; gap: 8px; color: var(--muted); }
+    .plan li::before { content: "✓ "; color: var(--teal); font-weight: 800; }
+    .plan .btn { margin-top: auto; }
+    .fine { text-align: center; color: var(--muted); margin-top: 24px; }
+
+    .faq { display: grid; gap: 14px; max-width: 860px; }
+    details { background: #fff; border-radius: 22px; padding: 4px 24px; box-shadow: var(--shadow); border: 3px solid transparent; }
+    details[open] { border-color: var(--mint); }
+    summary { cursor: pointer; list-style: none; font: 700 1.15rem/1.3 var(--head); padding: 18px 30px 18px 0; position: relative; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 1.6rem; color: var(--purple); }
+    details[open] summary::after { content: "–"; }
+    details p { margin: 0 0 18px; color: var(--muted); }
+
+    .about { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 40px; align-items: center; }
+    .about-art { background: #fff; border-radius: 40px; padding: 40px; box-shadow: var(--shadow); border: 4px solid var(--teal); }
+    .final { text-align: center; background: var(--purple); color: #fff; border-radius: 40px; padding: 60px 30px; position: relative; overflow: hidden; isolation: isolate; }
+    .final h2 { color: #fff; font-size: clamp(2rem, 4.5vw, 3.2rem); }
+    .final p { font-size: 1.15rem; opacity: .95; margin: 0 auto 26px; max-width: 560px; }
+    .final .btn { border-color: var(--purple-dark); box-shadow: 0 4px 0 var(--purple-dark); }
+    footer { padding: 40px 0 50px; color: var(--muted); font-size: .95rem; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; align-items: center; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pop { 0% { transform: scale(.7); opacity: 0; } 12% { transform: scale(1); opacity: 1; } 88% { transform: scale(1); opacity: 1; } 100% { transform: scale(.96); opacity: .0; } }
+    @keyframes drive { from { transform: translateX(-140%); } to { transform: translateX(0); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
+
+    @media (max-width: 900px) {
+      .hero-card { grid-template-columns: minmax(0, 1fr); padding: 40px 28px 0; }
+      .hero-text { padding-bottom: 0; }
+      .grid3, .features, .pricing, .grid2, .about, .privacy { grid-template-columns: minmax(0, 1fr); }
+      .plan.featured { transform: none; }
+      .privacy { padding: 40px 28px; }
+      .links a:not(.btn) { display: none; }
+    }
+    @media (max-width: 520px) {
+      .wrap { padding: 0 16px; }
+      .links .btn:not(.primary) { display: none; }
+      .brand { font-size: 1.4rem; }
+      .brand svg { width: 44px; }
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Dismissly",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web browser",
+    "description": "School dismissal app for quiet bus calls: the office taps when a bus arrives and classroom screens show when to send riders down.",
+    "offers": { "@type": "Offer", "price": "249", "priceCurrency": "USD" },
+    "publisher": { "@type": "Organization", "name": "STEMstarters" }
+  }
+  </script>
+</head>
+<body>
+
+<!-- Reusable cute school bus -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="bus" viewBox="0 0 220 128">
+      <ellipse cx="112" cy="120" rx="98" ry="6" fill="rgba(0,0,0,.15)"/>
+      <rect x="18" y="7" width="10" height="8" rx="2" fill="#ff5a5f" stroke="#2b2d42" stroke-width="2"/>
+      <rect x="148" y="7" width="10" height="8" rx="2" fill="#ff5a5f" stroke="#2b2d42" stroke-width="2"/>
+      <path d="M160 52 H196 Q208 54 210 66 V100 H160 Z" fill="#ffd23f" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M14 100 V24 Q14 13 26 13 H156 Q166 13 166 24 V100 Z" fill="#ffd23f" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M158 22 Q164 22 165 28 L170 52 H158 Z" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="22" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="45" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="68" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="91" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="114" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="137" y="22" width="18" height="74" rx="3" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <text x="76" y="56.5" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="9.5" fill="#2b2d42">SCHOOL BUS</text>
+      <rect x="16" y="63" width="119" height="4" fill="#2b2d42"/><rect x="16" y="75" width="119" height="4" fill="#2b2d42"/><rect x="16" y="87" width="119" height="4" fill="#2b2d42"/>
+      <polygon points="122,48 128,48 132,52 132,58 128,62 122,62 118,58 118,52" fill="#e63946" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="180" cy="66" r="4.2" fill="#2b2d42"/><circle cx="193" cy="66" r="4.2" fill="#2b2d42"/>
+      <circle cx="181.4" cy="64.5" r="1.5" fill="#fff"/><circle cx="194.4" cy="64.5" r="1.5" fill="#fff"/>
+      <circle cx="175" cy="76" r="3.4" fill="#ff8fab"/><circle cx="199" cy="76" r="3.4" fill="#ff8fab"/>
+      <path d="M181 75 Q186.5 81 192 75" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="206" cy="86" r="4.5" fill="#fff3b0" stroke="#2b2d42" stroke-width="2.5"/>
+      <rect x="196" y="96" width="18" height="7" rx="3" fill="#2b2d42"/><rect x="8" y="96" width="14" height="7" rx="3" fill="#2b2d42"/>
+      <circle cx="48" cy="102" r="15" fill="#2b2d42"/><circle cx="48" cy="102" r="6" fill="#e9ecef"/>
+      <circle cx="180" cy="102" r="15" fill="#2b2d42"/><circle cx="180" cy="102" r="6" fill="#e9ecef"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Dismissly home"><svg aria-hidden="true"><use href="#bus"/></svg>Dismissly</a>
+    <nav class="links" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn" href="https://app.dismissly.com/">Log in</a>
+      <a class="btn primary" href="https://app.dismissly.com/">Start free trial</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-card">
+        <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span>
+        <div class="hero-text">
+          <span class="pill">School dismissal, made calm</span>
+          <h1>Quiet bus calls for every classroom.</h1>
+          <p class="lead">The office taps when a bus arrives. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed.</p>
+          <div class="cta">
+            <a class="btn yellow big" href="https://app.dismissly.com/">Start your free month</a>
+            <a class="btn big" href="#how">See how it works</a>
+          </div>
+          <p class="note">No credit card to try. Works on any classroom screen.</p>
+        </div>
+        <div class="screen" aria-label="Example classroom screen showing the Yellow bus called for grades K–1">
+          <div class="screen-inner">
+            <div class="mock-pop">
+              <svg aria-hidden="true"><use href="#bus"/></svg>
+              <div class="mock-title">Yellow bus</div>
+              <div class="mock-group">K–1</div>
+              <div class="mock-sub">Send your riders down!</div>
+            </div>
+            <div class="road" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="how">
+    <div class="wrap">
+      <span class="eyebrow">How it works</span>
+      <h2 class="section-title">Set it up in minutes. Run dismissal in seconds.</h2>
+      <p class="section-lead">No apps to install, no student rosters to import. If a screen can open a web page, it can run Dismissly.</p>
+      <div class="grid3">
+        <div class="card c-purple"><div class="chip ch0"><span>1</span></div><h3>Set up your school</h3><p>Add your buses by color or number, choose how you call grades (like K–1, then 2–3, then 4–5), and pick your colors and sound.</p></div>
+        <div class="card c-pink"><div class="chip ch1"><span>2</span></div><h3>Tap when a bus arrives</h3><p>Whoever runs dismissal marks buses as they pull in and calls each grade group with one tap. Backups sign in with your school's PIN.</p></div>
+        <div class="card c-teal"><div class="chip ch2"><span>3</span></div><h3>Classrooms light up</h3><p>Every classroom screen shows a big bus pop-up and a chime for its group. Teachers send riders down—no interruptions over the intercom.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <span class="eyebrow">Features</span>
+      <h2 class="section-title">Everything dismissal needs. Nothing it doesn't.</h2>
+      <p class="section-lead">Every plan includes every feature.</p>
+      <div class="features">
+        <div class="feature"><div class="ficon" style="background:#F3EAFD;color:#6B2FB3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h12"/></svg></div><h3>Call by grade group</h3><p>Call K–1, 2–3 and 4–5 in order—or set up any groups you like. Call one bus or every bus that's here at once.</p></div>
+        <div class="feature"><div class="ficon" style="background:#FFE9F5;color:#B8127A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="3"/><path d="M8 21h8M12 17v4"/></svg></div><h3>Full-screen bus pop-up</h3><p>When a class is called, a cheerful bus fills the screen so no one misses it—even from the back of the room.</p></div>
+        <div class="feature"><div class="ficon" style="background:#E1FBF5;color:#13806B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg></div><h3>Chime, horn or bell</h3><p>Choose a gentle chime, a bus horn, a school bell—or no sound at all.</p></div>
+        <div class="feature"><div class="ficon" style="background:#FFF6D6;color:#7A5A00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg></div><h3>Videos while they wait</h3><p>Teachers can play a YouTube video. It pauses by itself when their group is called, then picks back up.</p></div>
+        <div class="feature"><div class="ficon" style="background:#F3EAFD;color:#6B2FB3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h18M5 18V9l7-4 7 4v9"/><path d="M9 18v-5h6v5"/></svg></div><h3>A street full of buses</h3><p>Classrooms see buses pull in, wait in line, and head off when they leave—in the right order, every time.</p></div>
+        <div class="feature"><div class="ficon" style="background:#FFE9F5;color:#B8127A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg></div><h3>English and Spanish</h3><p>Show classroom screens in English, Spanish or both—great for dual-language schools.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="privacy">
+        <div>
+          <span class="eyebrow" style="color:var(--mint)">Privacy first</span>
+          <h2>No student data. Ever.</h2>
+          <p>Dismissly only knows your buses, your grade groups and what time things happen. There's nothing about students to protect, because we never collect it.</p>
+        </div>
+        <ul class="checks">
+          <li>No student names or rosters</li>
+          <li>No student accounts or logins</li>
+          <li>No parent app or phone numbers</li>
+          <li>PIN-protected master panel</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="pricing">
+    <div class="wrap">
+      <span class="eyebrow">Pricing</span>
+      <h2 class="section-title">One simple price per school.</h2>
+      <p class="section-lead">Try everything free for a month. Every plan includes every feature and unlimited classroom screens.</p>
+      <div class="pricing">
+        <div class="plan">
+          <h3>Free trial</h3>
+          <div class="price">$0 <small>for 1 month</small></div>
+          <ul><li>Every feature</li><li>Unlimited classroom screens</li><li>No credit card needed</li></ul>
+          <a class="btn" href="https://app.dismissly.com/">Start free trial</a>
+        </div>
+        <div class="plan featured">
+          <span class="tag">Founding schools</span>
+          <h3>Founding school</h3>
+          <div class="price">$149 <small>/ year</small></div>
+          <ul><li>Every feature</li><li>Price locked in while you stay subscribed</li><li>Help shape new features</li></ul>
+          <a class="btn primary" href="https://app.dismissly.com/">Become a founding school</a>
+        </div>
+        <div class="plan">
+          <h3>School plan</h3>
+          <div class="price">$249 <small>/ year</small></div>
+          <ul><li>Every feature</li><li>Unlimited classroom screens</li><li>Email support</li></ul>
+          <a class="btn" href="https://app.dismissly.com/">Start free trial</a>
+        </div>
+      </div>
+      <p class="fine">Buying for several schools? <a href="#contact">Ask about district pricing.</a></p>
+    </div>
+  </section>
+
+  <section class="block" id="faq">
+    <div class="wrap">
+      <span class="eyebrow">FAQ</span>
+      <h2 class="section-title">Questions schools ask</h2>
+      <div class="faq">
+        <details><summary>Do teachers need an account or login?</summary><p>No. Teachers open your school's classroom link once, pick their grade group, and leave it up. That's it.</p></details>
+        <details><summary>What screens does it work on?</summary><p>Anything with a web browser: interactive boards, classroom TVs, Chromebooks, laptops and tablets. There's nothing to install.</p></details>
+        <details><summary>Who can call buses?</summary><p>Anyone with your school's master panel PIN—so a sub, office aide or assistant principal can run dismissal when you're out. You can change the PIN anytime.</p></details>
+        <details><summary>What if the internet hiccups?</summary><p>Classroom screens keep checking in on their own. If a screen loses its connection, a small dot turns orange, and it catches up as soon as it's back online.</p></details>
+        <details><summary>Do you collect any student information?</summary><p>No. Dismissly stores your buses, grade groups and times—never student names, rosters or photos.</p></details>
+        <details><summary>Can we use it for car riders and walkers?</summary><p>Today Dismissly is built for bus calls. Car rider and walker calls are on the way, and founding schools help decide what comes next.</p></details>
+        <details><summary>What happens after the free month?</summary><p>Subscribe to keep going. If you don't, your setup is saved, so you can pick up right where you left off whenever you're ready.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="about">
+    <div class="wrap about">
+      <div class="about-art"><svg aria-hidden="true" style="width:100%;height:auto;display:block" viewBox="0 0 220 128"><use href="#bus"/></svg></div>
+      <div>
+        <span class="eyebrow">About</span>
+        <h2 class="section-title">Made by STEMstarters. Built by a teacher.</h2>
+        <p class="section-lead" style="margin-bottom:0">Dismissly was built by an elementary school teacher who was tired of intercom interruptions and "Is that our bus?" at the end of every day. It's made for real classrooms: simple for the office, calm for teachers, and fun for kids.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="contact">
+    <div class="wrap">
+      <div class="final">
+        <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span>
+        <h2>Ready for a quieter dismissal?</h2>
+        <p>Set up your school in a few minutes and try every feature free for a month.</p>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+          <a class="btn yellow big" href="https://app.dismissly.com/">Start your free month</a>
+          <a class="btn big" href="mailto:hello@stemstarters.com?subject=Dismissly%20question">Email us</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 STEMstarters LLC · Dismissly</span>
+    <span><a href="mailto:hello@stemstarters.com">hello@stemstarters.com</a></span>
+  </div>
+</footer>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type": "Question", "name": "Do teachers need an account or login?", "acceptedAnswer": {"@type": "Answer", "text": "No. Teachers open your school's classroom link once, pick their grade group, and leave it up."}},
+    {"@type": "Question", "name": "What screens does it work on?", "acceptedAnswer": {"@type": "Answer", "text": "Anything with a web browser: interactive boards, classroom TVs, Chromebooks, laptops and tablets. There's nothing to install."}},
+    {"@type": "Question", "name": "Do you collect any student information?", "acceptedAnswer": {"@type": "Answer", "text": "No. Dismissly stores your buses, grade groups and times—never student names, rosters or photos."}}
+  ]
+}
+</script>
+</body>
+</html>
