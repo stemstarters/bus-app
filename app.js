@@ -48,7 +48,8 @@ function route() {
   }
   if (!code && location.hash) code = extractCode("#" + location.hash.slice(1));
   code = code ? extractCode("/" + code) : null;
-  return { code, admin };
+  const owner = !code && /^owner$/i.test(parts[0] || "");
+  return { code, admin, owner };
 }
 function go(path) { history.pushState({}, "", path); boot(); }
 window.addEventListener("popstate", () => boot());
@@ -301,6 +302,24 @@ function makeDemoApi() {
       }
       return out.length ? { ok: true, schools: out } : { ok: false, error: "no_match" };
     },
+    async ownerStats(key, days = 30) {
+      if (key !== "demo") return { ok: false, error: "bad_key" };
+      const rows = [], schools = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k.startsWith("busdemo-stats:")) { const [, c, day] = k.split(":"); rows.push({ code: c, day, ...store.get(k) }); }
+        if (k.startsWith("busdemo:")) { const v = store.get(k); schools.push({ code: k.slice(8), name: v?.settings?.name, buses: v?.settings?.buses?.length || 0 }); }
+      }
+      const t = today(), ago = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+      const wk = ago(6);
+      const daily = Array.from({ length: days }, (_, i) => { const day = ago(days - 1 - i); const r = rows.filter((x) => x.day === day); return { day, dismissals: r.length, calls: r.reduce((a, x) => a + (x.calls || 0), 0) }; });
+      return { ok: true, today: t, totals: {
+        schools: schools.length, new_schools_7d: schools.length, dismissals: rows.length,
+        dismissals_7d: rows.filter((x) => x.day >= wk).length, active_schools_7d: new Set(rows.filter((x) => x.day >= wk).map((x) => x.code)).size,
+        buses_arrived: rows.reduce((a, x) => a + (x.arrived || 0), 0), group_calls: rows.reduce((a, x) => a + (x.calls || 0), 0),
+        first_day: rows.map((x) => x.day).sort()[0] || null },
+        daily, schools: schools.map((sc) => { const r = rows.filter((x) => x.code === sc.code); return { ...sc, dismissals: r.length, last_day: r.map((x) => x.day).sort().pop() || null, group_calls: r.reduce((a, x) => a + (x.calls || 0), 0) }; }) };
+    },
     async getSchool(code) { const s = load(code); return s ? { code, settings: s.settings, state: s.state } : null; },
     async checkPin(code, pin) { const s = load(code); if (!s) return { ok: false, error: "not_found" }; return s.pin === pin ? { ok: true } : { ok: false, error: "bad_pin" }; },
     async saveState(code, pin, state, expected) {
@@ -309,6 +328,12 @@ function makeDemoApi() {
       if (s.pin !== pin) return { ok: false, error: "bad_pin" };
       if ((s.state.version || 0) !== expected) return { ok: false, error: "conflict", state: s.state };
       s.state = { ...state, version: expected + 1 };
+      const sum = daySummary(s.state);
+      if (sum) {
+        const k = "busdemo-stats:" + code + ":" + s.state.day;
+        const old = store.get(k) || {};
+        store.set(k, { arrived: Math.max(old.arrived || 0, sum.arrived), calls: Math.max(old.calls || 0, sum.calls), left: Math.max(old.left || 0, sum.left) });
+      }
       save(code, s);
       return { ok: true, state: s.state };
     },
@@ -358,6 +383,7 @@ async function makeSupabaseApi() {
     },
     checkPin: (code, pin) => rpc("bus_check_pin", { p_code: code, p_pin: pin }),
     findSchool: (name, pin) => rpc("bus_find_school", { p_name: name, p_pin: pin }),
+    ownerStats: (key, days) => rpc("bus_owner_stats", { p_key: key, p_days: days }),
     saveState: (code, pin, state, expected) => rpc("bus_save_state", { p_code: code, p_pin: pin, p_state: state, p_expected_version: expected }),
     saveSettings: (code, pin, settings, newPin) => rpc("bus_save_settings", { p_code: code, p_pin: pin, p_settings: settings, p_new_pin: newPin || null }),
     subscribe(code, fn) {
@@ -448,6 +474,7 @@ async function boot() {
   if (!api) api = DEMO ? makeDemoApi() : await makeSupabaseApi().catch((e) => { console.error(e); return null; });
   if (!api) { $app.innerHTML = `<div class="center-card card"><h2>Couldn't load</h2><p>Check your internet connection and refresh.</p></div>`; return; }
   const r = route();
+  if (r.owner) return renderOwner();
   if (!r.code) return renderHome();
   if (r.admin) return renderAdmin(r.code);
   return renderDisplay(r.code);
@@ -1283,6 +1310,135 @@ function renderDisplay(code) {
       </div>`;
     }).join("");
   }
+}
+
+/* ============================ OWNER STATS ============================== */
+function daySummary(state) {
+  if (!state?.day || !state.buses) return null;
+  const bs = Object.values(state.buses);
+  const arrived = bs.filter((b) => b.arrived).length;
+  const calls = bs.reduce((a, b) => a + Object.keys(b.called || {}).length, 0);
+  const left = bs.filter((b) => b.left).length;
+  return arrived || calls ? { arrived, calls, left } : null;
+}
+const fmtNum = (n) => Number(n || 0).toLocaleString();
+const fmtDay = (d, opts = { month: "short", day: "numeric" }) => d ? new Date(d + "T12:00:00").toLocaleDateString([], opts) : "—";
+
+function renderOwner() {
+  applyTheme(THEMES.STEMstarters);
+  document.title = "Owner stats · Dismissal Magic";
+  const key = sess.get("busownerkey");
+  if (!key) {
+    $app.innerHTML = `${demoBanner()}
+      <div class="center-card card">
+        <div class="hero-bus small">${busSVG("#ffd23f")}</div>
+        <h1>Owner stats</h1>
+        <p class="muted">Private to the Dismissal Magic owner.</p>
+        <form id="owner-form" class="stack">
+          <label class="sr" for="owner-key">Owner passphrase</label>
+          <input id="owner-key" type="password" autocomplete="current-password" placeholder="Owner passphrase" autofocus />
+          <button class="btn primary big" type="submit">Open stats</button>
+          <p class="err" id="owner-err"></p>
+        </form>
+      </div>`;
+    document.getElementById("owner-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const k = document.getElementById("owner-key").value;
+      const r = await api.ownerStats(k, 30);
+      if (!r?.ok) {
+        document.getElementById("owner-err").textContent = { bad_key: "That passphrase didn't match.", locked: ERRORS.locked, no_owner_key: "No owner passphrase is set yet. Run the stats update in Supabase first." }[r?.error] || ERRORS.network;
+        return;
+      }
+      sess.set("busownerkey", k);
+      ownerDashboard(k, r);
+    };
+    return;
+  }
+  ownerDashboard(key, null);
+}
+
+async function ownerDashboard(key, first) {
+  let days = 30;
+  const out = () => { sess.del("busownerkey"); renderOwner(); };
+  $app.innerHTML = `${demoBanner()}<div class="page owner">
+    ${headBlock({ pill: wordmark(), title: "Owner stats", sub: "Magical dismissals across every school.", right: `<div class="row"><button class="btn small light" id="o-refresh">Refresh</button><button class="btn small light" id="o-out">Lock</button></div>` })}
+    <div id="o-body"><p class="muted">Loading…</p></div></div>`;
+  document.getElementById("o-out").onclick = out;
+  document.getElementById("o-refresh").onclick = () => load();
+  async function load() {
+    const r = first || await api.ownerStats(key, days);
+    first = null;
+    if (!r?.ok) { if (r?.error === "bad_key" || r?.error === "locked") return out(); document.getElementById("o-body").innerHTML = `<p class="err">${ERRORS.network}</p>`; return; }
+    draw(r);
+  }
+  function draw(r) {
+    const t = r.totals || {};
+    const tile = (label, value, sub, cls = "") => `<div class="card stat ${cls}"><div class="stat-label">${label}</div><div class="stat-value">${value}</div>${sub ? `<div class="stat-sub">${sub}</div>` : ""}</div>`;
+    document.getElementById("o-body").innerHTML = `
+      <section class="stat-grid">
+        ${tile("✨ Magical dismissals", fmtNum(t.dismissals), t.first_day ? `Counting since ${fmtDay(t.first_day, { month: "long", day: "numeric", year: "numeric" })}` : "Starts counting with the next dismissal", "hero s1")}
+        ${tile("This week", fmtNum(t.dismissals_7d), "Last 7 days", "s2")}
+        ${tile("Schools", fmtNum(t.schools), `${fmtNum(t.active_schools_7d)} active this week · ${fmtNum(t.new_schools_7d)} new`, "s3")}
+        ${tile("Group calls", fmtNum(t.group_calls), `${fmtNum(t.buses_arrived)} bus arrivals`, "s4")}
+      </section>
+      <section class="card chart-card">
+        <div class="row spread">
+          <div><h2>Magical dismissals per day</h2><p class="muted small">One school's dismissal day = 1</p></div>
+          <div class="seg" role="group" aria-label="Time range">
+            ${[30, 90, 365].map((d) => `<button type="button" class="seg-btn ${d === days ? "on" : ""}" data-days="${d}">${d === 365 ? "1 year" : d + " days"}</button>`).join("")}
+          </div>
+        </div>
+        <div class="chart-wrap" id="o-chart"></div>
+        <details class="table-view"><summary>Show as a table</summary>
+          <table class="data"><thead><tr><th>Day</th><th>Dismissals</th><th>Group calls</th></tr></thead><tbody>
+          ${r.daily.slice().reverse().map((d) => `<tr><td>${fmtDay(d.day, { weekday: "short", month: "short", day: "numeric" })}</td><td>${fmtNum(d.dismissals)}</td><td>${fmtNum(d.calls)}</td></tr>`).join("")}
+          </tbody></table></details>
+      </section>
+      <section class="card">
+        <h2>Schools</h2>
+        <div class="table-scroll"><table class="data"><thead><tr><th>School</th><th>Code</th><th>Buses</th><th>Dismissals</th><th>Group calls</th><th>Last used</th></tr></thead><tbody>
+        ${(r.schools || []).map((s) => `<tr><td><b>${esc(s.name || "—")}</b></td><td class="mono">${esc(s.code)}</td><td>${fmtNum(s.buses)}</td><td>${fmtNum(s.dismissals)}</td><td>${fmtNum(s.group_calls)}</td><td>${s.last_day ? fmtDay(s.last_day) : "Not yet"}</td></tr>`).join("") || `<tr><td colspan="6" class="muted">No schools yet.</td></tr>`}
+        </tbody></table></div>
+      </section>`;
+    drawBars(document.getElementById("o-chart"), r.daily);
+    document.querySelectorAll("[data-days]").forEach((b) => (b.onclick = () => { days = +b.dataset.days; load(); }));
+  }
+  load();
+}
+
+// Single-series column chart with hover tooltips (no legend needed: one series).
+function drawBars(el, data) {
+  const W = Math.max(320, el.clientWidth || 800), H = 260, padL = 44, padR = 12, padT = 16, padB = 34;
+  const max = Math.max(1, ...data.map((d) => d.dismissals));
+  const step = max <= 5 ? 1 : max <= 10 ? 2 : Math.ceil(max / 5 / 5) * 5;
+  const top = Math.ceil(max / step) * step;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const band = iw / data.length, bw = Math.max(2, Math.min(24, band - 2));
+  const y = (v) => padT + ih - (v / top) * ih;
+  const ticks = []; for (let v = 0; v <= top; v += step) ticks.push(v);
+  const every = Math.ceil(data.length / 8);
+  const bars = data.map((d, i) => {
+    const x = padL + i * band + (band - bw) / 2, h = (d.dismissals / top) * ih, r = Math.min(4, bw / 2, h);
+    const path = h > 0 ? `M${x},${padT + ih} V${padT + ih - h + r} Q${x},${padT + ih - h} ${x + r},${padT + ih - h} H${x + bw - r} Q${x + bw},${padT + ih - h} ${x + bw},${padT + ih - h + r} V${padT + ih} Z` : "";
+    return `<g class="bar-g" data-i="${i}"><rect x="${padL + i * band}" y="${padT}" width="${band}" height="${ih}" fill="transparent"/>${path ? `<path d="${path}" fill="#9246DD"/>` : ""}</g>`;
+  }).join("");
+  const showX = (i) => i % every === 0 ? (data.length - 1 - i >= every / 2 || i === data.length - 1) : i === data.length - 1;
+  const xl = data.map((d, i) => showX(i) ? `<text x="${padL + i * band + band / 2}" y="${H - 10}" text-anchor="middle">${esc(fmtDay(d.day))}</text>` : "").join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Magical dismissals per day, last ${data.length} days">
+    ${ticks.map((v) => `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" class="grid"/><text x="${padL - 8}" y="${y(v) + 4}" text-anchor="end">${fmtNum(v)}</text>`).join("")}
+    ${bars}${xl}</svg><div class="tip" hidden></div>`;
+  const tip = el.querySelector(".tip");
+  el.querySelectorAll(".bar-g").forEach((g) => {
+    g.onmouseenter = g.onmousemove = (e) => {
+      const d = data[+g.dataset.i];
+      tip.innerHTML = `<b>${esc(fmtDay(d.day, { weekday: "short", month: "short", day: "numeric" }))}</b><br>${fmtNum(d.dismissals)} magical dismissal${d.dismissals === 1 ? "" : "s"}<br><span>${fmtNum(d.calls)} group calls</span>`;
+      tip.hidden = false;
+      const box = el.getBoundingClientRect();
+      tip.style.left = Math.min(box.width - 170, Math.max(0, e.clientX - box.left + 12)) + "px";
+      tip.style.top = Math.max(0, e.clientY - box.top - 70) + "px";
+    };
+    g.onmouseleave = () => (tip.hidden = true);
+  });
 }
 
 /* ================================ MODAL ================================ */
