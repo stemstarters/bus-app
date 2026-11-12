@@ -435,3 +435,9 @@ table.data .mono { font: 800 1rem var(--head); letter-spacing: .12em; color: #13
 .magic-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 16px; }
 .magic-box .stat-value { font-size: clamp(3rem, 7vw, 4.6rem); margin: 0; color: var(--primary); }
 .magic-words { font: 800 clamp(1.6rem, 3.6vw, 2.6rem)/1.1 var(--head); color: #3A0F65; }
+
+/* ---------- master panel: Magic Dismissals count ---------- */
+.magic-strip { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; background: #fff; border: 4px solid var(--c-purple); border-radius: var(--radius); padding: 14px 24px; margin: -8px 0 20px; box-shadow: var(--shadow); }
+.magic-strip:empty { display: none; }
+.magic-num { font: 800 2.4rem/1 var(--head); color: var(--primary); }
+.magic-txt { font: 800 1.4rem/1.1 var(--head); color: #3A0F65; }

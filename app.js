@@ -302,6 +302,12 @@ function makeDemoApi() {
       }
       return out.length ? { ok: true, schools: out } : { ok: false, error: "no_match" };
     },
+    async schoolStats(code) {
+      const days = [];
+      for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith("busdemo-stats:" + code + ":")) days.push(k.split(":")[2]); }
+      days.sort();
+      return { ok: true, dismissals: days.length, first_day: days[0] || null };
+    },
     async ownerStats(key, days = 30) {
       if (key !== "demo") return { ok: false, error: "bad_key" };
       const rows = [], schools = [];
@@ -384,6 +390,7 @@ async function makeSupabaseApi() {
     checkPin: (code, pin) => rpc("bus_check_pin", { p_code: code, p_pin: pin }),
     findSchool: (name, pin) => rpc("bus_find_school", { p_name: name, p_pin: pin }),
     ownerStats: (key, days) => rpc("bus_owner_stats", { p_key: key, p_days: days }),
+    schoolStats: (code) => rpc("bus_school_stats", { p_code: code }),
     saveState: (code, pin, state, expected) => rpc("bus_save_state", { p_code: code, p_pin: pin, p_state: state, p_expected_version: expected }),
     saveSettings: (code, pin, settings, newPin) => rpc("bus_save_settings", { p_code: code, p_pin: pin, p_settings: settings, p_new_pin: newPin || null }),
     subscribe(code, fn) {
@@ -835,7 +842,7 @@ function adminPanel(code, pin) {
     setStatus("live");
     if (!school) rememberSchool(code, s.settings.name);
     school = s;
-    if (!document.getElementById("admin-root")) shell();
+    if (!document.getElementById("admin-root")) { shell(); loadCount(); }
     draw();
   });
   cleanup = () => feed.stop();
@@ -854,7 +861,7 @@ function adminPanel(code, pin) {
         const next = applyOp(base, op, school.settings);
         if (!next) return;
         const r = await api.saveState(code, pin, next, base.version || 0);
-        if (r?.ok) { school.state = r.state; draw(); api.notify(code); return; }
+        if (r?.ok) { school.state = r.state; draw(); api.notify(code); loadCountSoon(); return; }
         if (r?.error === "conflict") { school.state = r.state; continue; }
         if (r?.error === "bad_pin" || r?.error === "locked") { alert(ERRORS[r.error] + " Please sign in again."); signOut(); return; }
         toast(ERRORS[r?.error] || ERRORS.network);
@@ -862,6 +869,21 @@ function adminPanel(code, pin) {
       }
       toast("Someone else is busy on the panel — try again.");
     } finally { busy = false; }
+  }
+
+  let countTimer = null;
+  function loadCountSoon() { clearTimeout(countTimer); countTimer = setTimeout(loadCount, 1500); }
+  async function loadCount() {
+    const el = document.getElementById("magic-strip");
+    if (!el) return;
+    let r = null;
+    try { r = await api.schoolStats(code); } catch {}
+    if (!r?.ok) { el.hidden = true; return; }
+    el.hidden = false;
+    const n = r.dismissals || 0;
+    el.innerHTML = n
+      ? `<span class="magic-num">${fmtNum(n)}</span><span class="magic-txt">Magic Dismissal${n === 1 ? "" : "s"} ✨</span><span class="muted small">${r.first_day ? `since ${fmtDay(r.first_day, { month: "long", day: "numeric", year: "numeric" })}` : ""}</span>`
+      : `<span class="magic-txt">✨ Your first Magic Dismissal starts when you mark a bus arrived.</span>`;
   }
 
   function shell() {
@@ -872,6 +894,7 @@ function adminPanel(code, pin) {
             <button class="btn small light" id="a-settings">Settings</button>
             <button class="btn small light" id="a-out">Sign out</button>
           </div>` })}
+        <section class="magic-strip" id="magic-strip" aria-live="polite"></section>
         <section class="group-bar" id="group-bar"></section>
         <section class="bus-grid" id="bus-grid"></section>
         <section class="card step s3 log-card">
