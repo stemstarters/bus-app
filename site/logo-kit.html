@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dismissal Magic — Logo kit</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@800&family=Poppins:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #fdf6e3; color: #2b2d42; font: 500 16px/1.5 Poppins, system-ui, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 60px; }
+  h1 { font: 800 2.4rem/1.1 "League Spartan", sans-serif; margin: 0 0 6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; margin-top: 24px; }
+  .item { background: #fff; border-radius: 24px; padding: 18px; box-shadow: 0 12px 26px -16px rgba(58,15,101,.45); display: flex; flex-direction: column; gap: 10px; }
+  .item canvas { width: 100%; height: auto; border-radius: 14px; background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 20px 20px; }
+  .item b { font-family: "League Spartan", sans-serif; font-size: 1.2rem; }
+  .item small { color: #5c5f78; }
+  button { font: 700 1rem Poppins, sans-serif; border: 3px solid #2b2d42; border-radius: 999px; padding: 8px 18px; background: #9246DD; color: #fff; box-shadow: 0 4px 0 #2b2d42; cursor: pointer; align-self: flex-start; }
+  #status { color: #5c5f78; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dismissal Magic logo kit</h1>
+  <p id="status">Loading fonts…</p>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+const C = { purple: "#9246DD", dark: "#3A0F65", pink: "#FC52B3", mint: "#8DEFDA", yellow: "#F8C631", cream: "#fdf6e3", ink: "#2b2d42" };
+const BUS = (color = "#ffd23f") => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 128">
+<ellipse cx="112" cy="120" rx="98" ry="6" fill="rgba(0,0,0,.15)"/>
+<rect x="18" y="7" width="10" height="8" rx="2" fill="#ff5a5f" stroke="#2b2d42" stroke-width="2"/><rect x="148" y="7" width="10" height="8" rx="2" fill="#ff5a5f" stroke="#2b2d42" stroke-width="2"/>
+<path d="M160 52 H196 Q208 54 210 66 V100 H160 Z" fill="${color}" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+<path d="M14 100 V24 Q14 13 26 13 H156 Q166 13 166 24 V100 Z" fill="${color}" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+<path d="M158 22 Q164 22 165 28 L170 52 H158 Z" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+${[22,45,68,91,114].map(x=>`<rect x="${x}" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>`).join("")}
+<rect x="137" y="22" width="18" height="74" rx="3" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+<text x="76" y="56.5" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="9.5" fill="#2b2d42">SCHOOL BUS</text>
+<rect x="16" y="63" width="119" height="4" fill="#2b2d42"/><rect x="16" y="75" width="119" height="4" fill="#2b2d42"/><rect x="16" y="87" width="119" height="4" fill="#2b2d42"/>
+<polygon points="122,48 128,48 132,52 132,58 128,62 122,62 118,58 118,52" fill="#e63946" stroke="#fff" stroke-width="1.5"/>
+<circle cx="180" cy="66" r="4.2" fill="#2b2d42"/><circle cx="193" cy="66" r="4.2" fill="#2b2d42"/><circle cx="181.4" cy="64.5" r="1.5" fill="#fff"/><circle cx="194.4" cy="64.5" r="1.5" fill="#fff"/>
+<circle cx="175" cy="76" r="3.4" fill="#ff8fab"/><circle cx="199" cy="76" r="3.4" fill="#ff8fab"/>
+<path d="M181 75 Q186.5 81 192 75" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round"/>
+<circle cx="206" cy="86" r="4.5" fill="#fff3b0" stroke="#2b2d42" stroke-width="2.5"/>
+<rect x="196" y="96" width="18" height="7" rx="3" fill="#2b2d42"/><rect x="8" y="96" width="14" height="7" rx="3" fill="#2b2d42"/>
+<circle cx="48" cy="102" r="15" fill="#2b2d42"/><circle cx="48" cy="102" r="6" fill="#e9ecef"/><circle cx="180" cy="102" r="15" fill="#2b2d42"/><circle cx="180" cy="102" r="6" fill="#e9ecef"/>
+</svg>`;
+const STAR = (stroke = C.dark) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="${C.yellow}" stroke="${stroke}" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+const img = (svg) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); });
+
+let busImg, starImg, starLightImg;
+const FONT = (s) => `800 ${s}px "League Spartan"`;
+
+// Draw a word with star dots on every "ı". Returns width.
+function measure(ctx, text, size) { ctx.font = FONT(size); return ctx.measureText(text).width; }
+function drawWord(ctx, text, x, y, size, color, star = starImg) {
+  ctx.font = FONT(size); ctx.fillStyle = color; ctx.textBaseline = "alphabetic";
+  let cx = x;
+  for (const ch of text) {
+    ctx.fillText(ch, cx, y);
+    const w = ctx.measureText(ch).width;
+    if (ch === "ı") {
+      const s = size * 0.44;
+      ctx.drawImage(star, cx + w / 2 - s / 2, y - size * 0.98, s, s);
+    }
+    cx += w;
+  }
+  return cx - x;
+}
+const W1 = "Dısmıssal", W2 = "Magıc";
+function wordmarkLine(ctx, x, y, size, c1, c2, star) {
+  const w1 = drawWord(ctx, W1 + " ", x, y, size, c1, star);
+  drawWord(ctx, W2, x + w1, y, size, c2, star);
+}
+function lineWidth(ctx, size) { return measure(ctx, W1 + " " + W2, size); }
+
+function blobs(ctx, w, h) {
+  ctx.save();
+  ctx.globalAlpha = .35; ctx.fillStyle = C.pink; ctx.beginPath(); ctx.arc(w * .92, h * .06, w * .3, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = .22; ctx.fillStyle = C.mint; ctx.beginPath(); ctx.arc(w * .12, h * 1.02, w * .32, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function rounded(ctx, x, y, w, h, r, fill) { ctx.fillStyle = fill; ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); }
+
+const VARIANTS = [
+  { file: "dismissal-magic-square-purple.png", title: "Square · purple", note: "Social media profile, slides (1024×1024)", w: 1024, h: 1024, draw(ctx, w, h) {
+      rounded(ctx, 0, 0, w, h, 0, C.purple); blobs(ctx, w, h);
+      const bw = 620, bh = bw * 128 / 220; ctx.drawImage(busImg, (w - bw) / 2, 140, bw, bh);
+      const size = 150; ctx.textAlign = "left";
+      const a = measure(ctx, W1, size); drawWord(ctx, W1, (w - a) / 2, 680, size, "#fff", starLightImg);
+      const b = measure(ctx, W2, size); drawWord(ctx, W2, (w - b) / 2, 850, size, C.yellow, starLightImg);
+  } },
+  { file: "dismissal-magic-square-cream.png", title: "Square · cream", note: "Flyers, documents, light backgrounds (1024×1024)", w: 1024, h: 1024, draw(ctx, w, h) {
+      rounded(ctx, 0, 0, w, h, 0, C.cream);
+      const bw = 620, bh = bw * 128 / 220; ctx.drawImage(busImg, (w - bw) / 2, 140, bw, bh);
+      const size = 150;
+      const a = measure(ctx, W1, size); drawWord(ctx, W1, (w - a) / 2, 680, size, C.dark);
+      const b = measure(ctx, W2, size); drawWord(ctx, W2, (w - b) / 2, 850, size, C.purple);
+  } },
+  { file: "dismissal-magic-horizontal.png", title: "Horizontal · transparent", note: "Website headers, email signature, letterhead (2000×500)", w: 2000, h: 500, draw(ctx, w, h) {
+      const size = 190, bw = 470, bh = bw * 128 / 220, gap = 50;
+      const total = bw + gap + lineWidth(ctx, size), x0 = (w - total) / 2;
+      ctx.drawImage(busImg, x0, (h - bh) / 2 + 10, bw, bh);
+      wordmarkLine(ctx, x0 + bw + gap, h / 2 + size * .36, size, C.dark, C.purple);
+  } },
+  { file: "dismissal-magic-horizontal-white.png", title: "Horizontal · white text", note: "For dark or purple backgrounds (2000×500)", w: 2000, h: 500, bg: "#3A0F65", draw(ctx, w, h) {
+      const size = 190, bw = 470, bh = bw * 128 / 220, gap = 50;
+      const total = bw + gap + lineWidth(ctx, size), x0 = (w - total) / 2;
+      ctx.drawImage(busImg, x0, (h - bh) / 2 + 10, bw, bh);
+      wordmarkLine(ctx, x0 + bw + gap, h / 2 + size * .36, size, "#fff", C.yellow, starLightImg);
+  } },
+  { file: "dismissal-magic-icon.png", title: "App icon", note: "Favicon, app icon, small spaces (512×512)", w: 512, h: 512, draw(ctx, w, h) {
+      rounded(ctx, 0, 0, w, h, 112, C.purple); ctx.save(); ctx.beginPath(); ctx.roundRect(0, 0, w, h, 112); ctx.clip(); blobs(ctx, w, h); ctx.restore();
+      const bw = 400, bh = bw * 128 / 220; ctx.drawImage(busImg, (w - bw) / 2, (h - bh) / 2 + 26, bw, bh);
+      ctx.drawImage(starLightImg, 330, 62, 120, 120); ctx.drawImage(starLightImg, 86, 96, 64, 64);
+  } },
+];
+
+(async () => {
+  try { await document.fonts.load(FONT(100), "Dısmıssal Magıc"); await document.fonts.ready; } catch {}
+  const ok = document.fonts.check(FONT(100), "Dısmıssal Magıc");
+  busImg = await img(BUS()); starImg = await img(STAR()); starLightImg = await img(STAR(C.dark));
+  const grid = document.getElementById("grid");
+  for (const v of VARIANTS) {
+    const cv = document.createElement("canvas"); cv.width = v.w; cv.height = v.h; cv.id = v.file;
+    const ctx = cv.getContext("2d");
+    if (v.bg) { /* preview background only; exported PNG stays transparent */ cv.style.background = v.bg; }
+    v.draw(ctx, v.w, v.h);
+    const item = document.createElement("div"); item.className = "item";
+    item.innerHTML = `<b>${v.title}</b><small>${v.note}</small>`;
+    item.appendChild(cv);
+    const btn = document.createElement("button"); btn.textContent = "Download PNG";
+    btn.onclick = () => cv.toBlob((b) => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = v.file; a.click(); });
+    item.appendChild(btn); grid.appendChild(item);
+  }
+  document.getElementById("status").textContent = ok ? "Ready. Click a button to download a PNG." : "Heads up: the League Spartan font didn't load, so letters use a fallback font. Refresh to try again.";
+  window.__ready = true;
+})();
+</script>
+</body>
+</html>

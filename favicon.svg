@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="112" fill="#9246DD"/>
+<circle cx="470" cy="30" r="150" fill="#FC52B3" opacity=".35"/>
+<svg x="56" y="160" width="400" height="233" viewBox="0 0 220 128">
+      <ellipse cx="112" cy="120" rx="98" ry="6" fill="rgba(0,0,0,.15)"/>
+      <rect x="18" y="7" width="10" height="8" rx="2" fill="#ff5a5f" stroke="#2b2d42" stroke-width="2"/>
+      <rect x="148" y="7" width="10" height="8" rx="2" fill="#ff5a5f" stroke="#2b2d42" stroke-width="2"/>
+      <path d="M160 52 H196 Q208 54 210 66 V100 H160 Z" fill="#ffd23f" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M14 100 V24 Q14 13 26 13 H156 Q166 13 166 24 V100 Z" fill="#ffd23f" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M158 22 Q164 22 165 28 L170 52 H158 Z" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="22" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="45" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="68" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="91" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="114" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="137" y="22" width="18" height="74" rx="3" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <text x="76" y="56.5" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="9.5" fill="#2b2d42">SCHOOL BUS</text>
+      <rect x="16" y="63" width="119" height="4" fill="#2b2d42"/><rect x="16" y="75" width="119" height="4" fill="#2b2d42"/><rect x="16" y="87" width="119" height="4" fill="#2b2d42"/>
+      <polygon points="122,48 128,48 132,52 132,58 128,62 122,62 118,58 118,52" fill="#e63946" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="180" cy="66" r="4.2" fill="#2b2d42"/><circle cx="193" cy="66" r="4.2" fill="#2b2d42"/>
+      <circle cx="181.4" cy="64.5" r="1.5" fill="#fff"/><circle cx="194.4" cy="64.5" r="1.5" fill="#fff"/>
+      <circle cx="175" cy="76" r="3.4" fill="#ff8fab"/><circle cx="199" cy="76" r="3.4" fill="#ff8fab"/>
+      <path d="M181 75 Q186.5 81 192 75" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="206" cy="86" r="4.5" fill="#fff3b0" stroke="#2b2d42" stroke-width="2.5"/>
+      <rect x="196" y="96" width="18" height="7" rx="3" fill="#2b2d42"/><rect x="8" y="96" width="14" height="7" rx="3" fill="#2b2d42"/>
+      <circle cx="48" cy="102" r="15" fill="#2b2d42"/><circle cx="48" cy="102" r="6" fill="#e9ecef"/>
+      <circle cx="180" cy="102" r="15" fill="#2b2d42"/><circle cx="180" cy="102" r="6" fill="#e9ecef"/>
+    </svg>
+<svg x="330" y="62" width="120" height="120" viewBox="0 0 24 24"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg>
+<svg x="86" y="96" width="64" height="64" viewBox="0 0 24 24"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg>
+</svg>
