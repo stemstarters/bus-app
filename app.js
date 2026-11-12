@@ -1361,7 +1361,7 @@ async function ownerDashboard(key, first) {
   let days = 30;
   const out = () => { sess.del("busownerkey"); renderOwner(); };
   $app.innerHTML = `${demoBanner()}<div class="page owner">
-    ${headBlock({ pill: wordmark(), title: "Owner stats", sub: "Magical dismissals across every school.", right: `<div class="row"><button class="btn small light" id="o-refresh">Refresh</button><button class="btn small light" id="o-out">Lock</button></div>` })}
+    ${headBlock({ pill: wordmark(), title: "Owner stats", sub: "Magic Dismissals across every school.", right: `<div class="row"><button class="btn small light" id="o-refresh">Refresh</button><button class="btn small light" id="o-out">Lock</button></div>` })}
     <div id="o-body"><p class="muted">Loading…</p></div></div>`;
   document.getElementById("o-out").onclick = out;
   document.getElementById("o-refresh").onclick = () => load();
@@ -1376,14 +1376,17 @@ async function ownerDashboard(key, first) {
     const tile = (label, value, sub, cls = "") => `<div class="card stat ${cls}"><div class="stat-label">${label}</div><div class="stat-value">${value}</div>${sub ? `<div class="stat-sub">${sub}</div>` : ""}</div>`;
     document.getElementById("o-body").innerHTML = `
       <section class="stat-grid">
-        ${tile("✨ Magical dismissals", fmtNum(t.dismissals), t.first_day ? `Counting since ${fmtDay(t.first_day, { month: "long", day: "numeric", year: "numeric" })}` : "Starts counting with the next dismissal", "hero s1")}
+        <div class="card stat hero s1 magic-box">
+          <div class="magic-line"><span class="stat-value">${fmtNum(t.dismissals)}</span> <span class="magic-words">Magic Dismissals ✨</span></div>
+          <div class="stat-sub">${t.first_day ? `Counting since ${fmtDay(t.first_day, { month: "long", day: "numeric", year: "numeric" })}` : "Starts counting with the next dismissal"}</div>
+        </div>
         ${tile("This week", fmtNum(t.dismissals_7d), "Last 7 days", "s2")}
         ${tile("Schools", fmtNum(t.schools), `${fmtNum(t.active_schools_7d)} active this week · ${fmtNum(t.new_schools_7d)} new`, "s3")}
         ${tile("Group calls", fmtNum(t.group_calls), `${fmtNum(t.buses_arrived)} bus arrivals`, "s4")}
       </section>
       <section class="card chart-card">
         <div class="row spread">
-          <div><h2>Magical dismissals per day</h2><p class="muted small">One school's dismissal day = 1</p></div>
+          <div><h2>Magic Dismissals per day</h2><p class="muted small">One school's dismissal day = 1</p></div>
           <div class="seg" role="group" aria-label="Time range">
             ${[30, 90, 365].map((d) => `<button type="button" class="seg-btn ${d === days ? "on" : ""}" data-days="${d}">${d === 365 ? "1 year" : d + " days"}</button>`).join("")}
           </div>
@@ -1424,14 +1427,14 @@ function drawBars(el, data) {
   }).join("");
   const showX = (i) => i % every === 0 ? (data.length - 1 - i >= every / 2 || i === data.length - 1) : i === data.length - 1;
   const xl = data.map((d, i) => showX(i) ? `<text x="${padL + i * band + band / 2}" y="${H - 10}" text-anchor="middle">${esc(fmtDay(d.day))}</text>` : "").join("");
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Magical dismissals per day, last ${data.length} days">
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="Magic Dismissals per day, last ${data.length} days">
     ${ticks.map((v) => `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" class="grid"/><text x="${padL - 8}" y="${y(v) + 4}" text-anchor="end">${fmtNum(v)}</text>`).join("")}
     ${bars}${xl}</svg><div class="tip" hidden></div>`;
   const tip = el.querySelector(".tip");
   el.querySelectorAll(".bar-g").forEach((g) => {
     g.onmouseenter = g.onmousemove = (e) => {
       const d = data[+g.dataset.i];
-      tip.innerHTML = `<b>${esc(fmtDay(d.day, { weekday: "short", month: "short", day: "numeric" }))}</b><br>${fmtNum(d.dismissals)} magical dismissal${d.dismissals === 1 ? "" : "s"}<br><span>${fmtNum(d.calls)} group calls</span>`;
+      tip.innerHTML = `<b>${esc(fmtDay(d.day, { weekday: "short", month: "short", day: "numeric" }))}</b><br>${fmtNum(d.dismissals)} Magic Dismissal${d.dismissals === 1 ? "" : "s"}<br><span>${fmtNum(d.calls)} group calls</span>`;
       tip.hidden = false;
       const box = el.getBoundingClientRect();
       tip.style.left = Math.min(box.width - 170, Math.max(0, e.clientX - box.left + 12)) + "px";
