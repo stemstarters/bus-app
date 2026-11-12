@@ -391,3 +391,12 @@ label.color-pick { flex-direction: row; align-items: center; gap: 8px; }
 .find-form label { margin: 0; }
 .share-row.found { margin-top: 14px; background: #FFF6D6; }
 @media (max-width: 720px) { .find-form { grid-template-columns: minmax(0, 1fr); } }
+
+/* wordmark: star dots on the i's */
+.wordmark { white-space: nowrap; }
+.wordmark em { font-style: normal; }
+.si { position: relative; display: inline-block; }
+.istar { position: absolute; left: 50%; top: 0.02em; width: 0.44em; height: 0.44em; transform: translateX(-50%); animation: twinkle 2.6s ease-in-out infinite; overflow: visible; }
+.si:nth-of-type(2) .istar { animation-delay: .9s; } .si:nth-of-type(3) .istar { animation-delay: 1.8s; }
+@keyframes twinkle { 0%, 100% { transform: translateX(-50%) scale(1) rotate(0); } 50% { transform: translateX(-50%) scale(1.2) rotate(18deg); } }
+@media (prefers-reduced-motion: reduce) { .istar { animation: none; } }

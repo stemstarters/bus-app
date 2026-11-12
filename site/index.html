@@ -34,11 +34,16 @@
     .nav { position: sticky; top: 0; z-index: 20; background: rgba(253, 246, 227, .92); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(58,15,101,.08); }
     .nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 76px; }
     .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--purple-dark); font: 800 1.7rem/1 var(--head); }
-    .brand-bus { position: relative; display: inline-block; }
-    .brand-bus > svg:first-child { width: 54px; height: 32px; display: block; }
-    .brand .spark { position: absolute; width: 20px; height: 20px; right: -9px; top: -10px; animation: twinkle 2.4s ease-in-out infinite; }
-    .brand em { font-style: normal; color: var(--purple); }
-    @keyframes twinkle { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.25) rotate(20deg); } }
+    .brand-bus { width: 54px; height: 32px; display: block; flex: none; }
+    .brand em { color: var(--purple); }
+    /* wordmark: star dots on the i's */
+    .wordmark { white-space: nowrap; }
+    .wordmark em { font-style: normal; }
+    .si { position: relative; display: inline-block; }
+    .istar { position: absolute; left: 50%; top: 0.02em; width: 0.44em; height: 0.44em; transform: translateX(-50%); animation: twinkle 2.6s ease-in-out infinite; overflow: visible; }
+    .si:nth-of-type(2) .istar { animation-delay: .9s; } em .si .istar { animation-delay: 1.8s; }
+    @keyframes twinkle { 0%, 100% { transform: translateX(-50%) scale(1) rotate(0); } 50% { transform: translateX(-50%) scale(1.2) rotate(18deg); } }
+    @media (prefers-reduced-motion: reduce) { .istar { animation: none; } }
     .links { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
     .links a { color: var(--ink); text-decoration: none; font-weight: 600; font-size: .98rem; }
     .links a:hover { color: var(--purple); }
@@ -164,10 +169,11 @@
     @media (max-width: 520px) {
       .wrap { padding: 0 16px; }
       .links .btn:not(.primary) { display: none; }
-      .links .btn.primary { white-space: nowrap; font-size: .9rem; padding: 8px 14px; min-height: 40px; }
-      .brand { font-size: 1.25rem; }
+      .links .btn.primary { white-space: nowrap; font-size: .85rem; padding: 8px 12px; min-height: 40px; }
+      .brand { font-size: 1.15rem; gap: 6px; }
+      .nav .wrap { gap: 8px; }
       .brand { font-size: 1.4rem; }
-      .brand-bus > svg:first-child { width: 44px; height: 26px; }
+      .brand-bus { width: 38px; height: 23px; }
     }
   </style>
   <script type="application/ld+json">
@@ -218,7 +224,7 @@
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="/" aria-label="Dismissal Magic home"><span class="brand-bus"><svg aria-hidden="true"><use href="#bus"/></svg><svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span>Dismissal <em>Magic</em></span></a>
+    <a class="brand" href="/" aria-label="Dismissal Magic home"><svg class="brand-bus" aria-hidden="true"><use href="#bus"/></svg><span class="wordmark" aria-label="Dismissal Magic"><span aria-hidden="true">D<span class="si">ı<svg class="istar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg></span>sm<span class="si">ı<svg class="istar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg></span>ssal <em>Mag<span class="si">ı<svg class="istar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg></span>c</em></span></span></a>
     <nav class="links" aria-label="Main">
       <a href="#how">How it works</a>
       <a href="#features">Features</a>

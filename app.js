@@ -132,7 +132,12 @@ function luminance(hex) {
 function chip(n, small = false) {
   return `<span class="nchip c${(n - 1) % 4}${small ? " sm" : ""}" aria-hidden="true"><b>${n}</b></span>`;
 }
-function headBlock({ pill = "✨ Dismissal Magic", title, sub = "", right = "", left = "", compact = false, titleId = "" }) {
+const STAR_SVG = `<svg class="istar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+function wordmark() {
+  const i = `<span class="si">ı${STAR_SVG}</span>`;
+  return `<span class="wordmark" aria-label="Dismissal Magic"><span aria-hidden="true">D${i}sm${i}ssal Mag${i}c</span></span>`;
+}
+function headBlock({ pill = wordmark(), title, sub = "", right = "", left = "", compact = false, titleId = "" }) {
   return `<header class="head-block${compact ? " compact" : ""}">
     <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span>
     <div class="head-text">
@@ -468,7 +473,7 @@ function renderHome() {
   $app.innerHTML = `
     ${demoBanner()}
     <div class="home">
-      ${headBlock({ pill: "For schools", title: "Dismissal Magic", sub: "Quiet bus calls, like magic. Call buses by grade. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed.", right: `<div class="head-bus">${busSVG("#ffd23f", "drive-in")}</div>` })}
+      ${headBlock({ pill: "For schools", title: wordmark(), sub: "Quiet bus calls, like magic. Call buses by grade. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed.", right: `<div class="head-bus">${busSVG("#ffd23f", "drive-in")}</div>` })}
       <div class="home-grid">
         <div class="card step s1">
           <h2>Have a school code?</h2>
@@ -1060,7 +1065,7 @@ function renderDisplay(code) {
   function shell() {
     $app.innerHTML = `${demoBanner()}
       <div class="display">
-        ${headBlock({ compact: true, pill: `<span id="live-dot" class="live-dot live"></span> Dismissal Magic`, title: "", titleId: "d-title", right: `<button class="chip" id="d-group"></button>` })}
+        ${headBlock({ compact: true, pill: `<span id="live-dot" class="live-dot live"></span> ${wordmark()}`, title: "", titleId: "d-title", right: `<button class="chip" id="d-group"></button>` })}
         <div class="message" id="d-msg"></div>
         <div class="d-main">
           <section id="video-wrap"></section>
