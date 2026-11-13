@@ -1538,8 +1538,8 @@ function adminPanel(code, pin) {
     document.getElementById("a-reset").onclick = () => confirmModal("Clear all of today's arrivals and calls?", "Reset", () => act({ type: "reset" }));
     const setBtn = document.getElementById("a-settings");
     setBtn.hidden = true; // admins only
-    let who = {};
-    (api.amAdmin ? api.amAdmin(code) : Promise.resolve({ admin: true })).then((w) => { who = w || {}; if (who.admin || who.legacy || !who.ok) setBtn.hidden = false; // !ok: database not updated yet, keep old behavior }).catch(() => {});
+    let who = {}; // if the database isn't updated yet (!ok), keep showing Settings
+    (api.amAdmin ? api.amAdmin(code) : Promise.resolve({ admin: true })).then((w) => { who = w || {}; if (who.admin || who.legacy || !who.ok) setBtn.hidden = false; }).catch(() => {});
     setBtn.onclick = () => {
       feed.stop();
       openSettings(code, school, { pin, canDelete: !!(who.owner || who.legacy), onDone: (p) => adminPanel(code, p || pin), onCancel: () => adminPanel(code, pin) });
