@@ -355,7 +355,14 @@ function makeDemoApi() {
     onAuthChange(fn) { authFns.push(fn); },
     async signIn(email) { store.set("busdemo-user", { email }); fireAuth(); return { ok: true, instant: true }; },
     async signOut() { store.del("busdemo-user"); fireAuth(); },
+    async billing(action, code) {
+      if (action === "portal") return { ok: false, error: "demo_billing" };
+      store.set("busdemo-paid:" + code, Date.now() + 365 * 864e5);
+      return { ok: true, url: "/account?paid=" + code };
+    },
     async schoolAccess(code) {
+      const paid = store.get("busdemo-paid:" + code);
+      if (paid && paid > Date.now()) return { active: true, reason: "paid", paid_until: new Date(paid).toISOString(), plan: "founding" };
       const owner = (store.get("busdemo-owners") || {})[code];
       const ends = owner && store.get("busdemo-trial:" + owner);
       if (!ends) return { active: true, reason: "comped" }; // demo schools made before accounts
@@ -499,6 +506,12 @@ async function makeSupabaseApi() {
     async signOut() { await sb.auth.signOut(); },
     mySchools: () => rpc("bus_my_schools", {}),
     schoolAccess: (code) => rpc("bus_school_access", { p_code: code }),
+    // Stripe: returns { ok, url } to send the owner to checkout or the billing portal.
+    async billing(action, code) {
+      const { data, error } = await sb.functions.invoke("billing", { body: { action, code } });
+      if (error) { console.error(error); return { ok: false, error: "billing_failed" }; }
+      return data;
+    },
     createSchool: (settings, pin) => rpc("bus_create_school_owned", { p_settings: settings, p_pin: pin }),
     async getSchool(code) {
       const { data, error } = await sb.rpc("bus_get_school", { p_code: code });
@@ -534,6 +547,12 @@ const ERRORS = {
   too_many_emails: "Too many sign-in emails were sent. Wait a few minutes and try again.",
   email_failed: "We couldn't send the sign-in email. Check the address and try again.",
   subscription_needed: "This school's free trial has ended. Subscribe to keep calling buses.",
+  not_owner: "Only the person who owns this school's account can subscribe. Sign in at My schools with that email.",
+  already_subscribed: "This school is already subscribed.",
+  already_free: "This school is on a free plan, so there's nothing to pay.",
+  no_billing: "There's no billing set up for this school yet.",
+  billing_failed: "We couldn't open billing right now. Please try again in a minute.",
+  demo_billing: "Billing isn't available in demo mode.",
   school_limit: `Each account can have up to ${SCHOOL_LIMIT} schools for now. Need more? Email hello@dismissalmagic.com.`,
 };
 
@@ -768,6 +787,16 @@ function renderHome() {
   });
 }
 
+// Send the owner to Stripe (checkout to subscribe, or the portal to manage billing).
+async function goBilling(action, code, btn) {
+  if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = "Opening…"; }
+  const r = await api.billing(action, code).catch(() => null);
+  if (r?.ok && r.url) { location.href = r.url; return; }
+  if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label; }
+  if (r?.error === "signed_out") return go("/account");
+  toast(ERRORS[r?.error] || ERRORS.billing_failed);
+}
+
 // Small status tag for a school in "My schools".
 function accessBadge(a) {
   if (!a) return "";
@@ -798,6 +827,12 @@ function renderAccount(next) {
   applyTheme(THEMES.STEMstarters);
   document.title = "Your account — Dismissal Magic";
   let unsub = false, shown, seq = 0;
+  const paidCode = new URLSearchParams(location.search).get("paid");
+  if (paidCode) {
+    history.replaceState({}, "", "/account");
+    setTimeout(() => toast("🎉 Thank you! Your subscription is active."), 400);
+    setTimeout(() => { if (!unsub) loadSchools(); }, 4000); // Stripe's confirmation can take a few seconds
+  }
   cleanup = () => { unsub = true; };
   // Redraw only when signing in/out actually changes who's signed in (e.g. the link was opened in another tab).
   api.onAuthChange((u) => { if (!unsub && (u?.email || null) !== shown) draw(); });
@@ -876,8 +911,11 @@ function renderAccount(next) {
         <div class="row">
           <a class="btn small" href="/${esc(x.code)}" target="_blank" rel="noopener" title="Opens in a new tab">Classroom screen ↗</a>
           <a class="btn small primary" href="/${esc(x.code)}/admin">School Dashboard</a>
+          ${x.access?.reason === "paid" ? `<button class="btn small" data-bill="portal" data-code="${esc(x.code)}">Manage billing</button>`
+            : x.access && x.access.reason !== "comped" ? `<button class="btn small subscribe" data-bill="checkout" data-code="${esc(x.code)}">Subscribe</button>` : ""}
         </div>
       </div>`).join("")}</div>`;
+    box.querySelectorAll("[data-bill]").forEach((b) => (b.onclick = () => goBilling(b.dataset.bill, b.dataset.code, b)));
     box.querySelectorAll("a:not([target])").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
   }
 }
@@ -1211,17 +1249,18 @@ function adminPanel(code, pin) {
     if (!el) return;
     el.className = "access-strip";
     if (a.active && a.reason === "trial") {
-      el.innerHTML = `🎁 <b>Free trial</b> · ${a.days_left} day${a.days_left === 1 ? "" : "s"} left`;
+      el.innerHTML = `🎁 <b>Free trial</b> · ${a.days_left} day${a.days_left === 1 ? "" : "s"} left · <button class="linklike" data-bill="checkout">Subscribe</button>`;
       if (a.days_left <= 7) el.classList.add("soon");
       el.hidden = false;
     } else if (!a.active) {
       el.classList.add("ended");
       el.innerHTML = `<div><b>Your free trial has ended.</b> Subscribe to keep calling buses. Classroom screens stay up, but new calls won't go out until you subscribe.</div>
-        <a class="btn primary" href="mailto:hello@dismissalmagic.com?subject=${encodeURIComponent("Subscribe: " + (school?.settings?.name || code))}">Subscribe</a>`;
+        <button class="btn primary" data-bill="checkout">Subscribe</button>`;
       el.hidden = false;
     } else {
       el.hidden = true; el.innerHTML = "";
     }
+    el.querySelectorAll("[data-bill]").forEach((b) => (b.onclick = () => goBilling("checkout", code, b)));
   }
 
   let countTimer = null;

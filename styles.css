@@ -474,3 +474,5 @@ table.data .mono { font: 800 1rem var(--head); letter-spacing: .12em; color: #13
 .access-badge.paid { background: #f1e8fc; color: #6b2fb0; }
 .access-badge.ended { background: #fdecea; color: #b03a2e; }
 .access-strip.ended .btn { text-decoration: none; }
+.btn.subscribe { background: var(--c-yellow); }
+.linklike { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--primary); text-decoration: underline; cursor: pointer; }
