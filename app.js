@@ -355,11 +355,19 @@ function makeDemoApi() {
     onAuthChange(fn) { authFns.push(fn); },
     async signIn(email) { store.set("busdemo-user", { email }); fireAuth(); return { ok: true, instant: true }; },
     async signOut() { store.del("busdemo-user"); fireAuth(); },
+    async schoolAccess(code) {
+      const owner = (store.get("busdemo-owners") || {})[code];
+      const ends = owner && store.get("busdemo-trial:" + owner);
+      if (!ends) return { active: true, reason: "comped" }; // demo schools made before accounts
+      const left = Math.ceil((ends - Date.now()) / 864e5);
+      return left > 0 ? { active: true, reason: "trial", trial_ends_at: new Date(ends).toISOString(), days_left: left } : { active: false, reason: "expired" };
+    },
     async mySchools() {
       const u = demoUser();
       if (!u) return { ok: false, error: "signed_out" };
       const owners = store.get("busdemo-owners") || {};
       const schools = Object.entries(owners).filter(([c, e]) => e === u.email && load(c)).map(([c]) => ({ code: c, name: load(c).settings?.name }));
+      for (const x of schools) x.access = await this.schoolAccess(x.code);
       return { ok: true, schools };
     },
     async createSchool(settings, pin) {
@@ -370,7 +378,8 @@ function makeDemoApi() {
       const alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
       let code;
       do { code = Array.from({ length: 6 }, () => alpha[Math.floor(Math.random() * alpha.length)]).join(""); } while (load(code));
-      save(code, { settings, state: { version: 0 }, pin });
+      save(code, { settings, state: { version: 0 }, pin, createdAt: Date.now() });
+      if (!store.get("busdemo-trial:" + u.email)) store.set("busdemo-trial:" + u.email, Date.now() + 30 * 864e5);
       const owners = store.get("busdemo-owners") || {}; owners[code] = u.email; store.set("busdemo-owners", owners);
       return { ok: true, code };
     },
@@ -424,6 +433,7 @@ function makeDemoApi() {
       const s = load(code);
       if (!s) return { ok: false, error: "not_found" };
       if (s.pin !== pin) return { ok: false, error: "bad_pin" };
+      if (!(await this.schoolAccess(code)).active) return { ok: false, error: "subscription_needed" };
       if ((s.state.version || 0) !== expected) return { ok: false, error: "conflict", state: s.state };
       s.state = { ...state, version: expected + 1 };
       const sum = daySummary(s.state);
@@ -488,6 +498,7 @@ async function makeSupabaseApi() {
     },
     async signOut() { await sb.auth.signOut(); },
     mySchools: () => rpc("bus_my_schools", {}),
+    schoolAccess: (code) => rpc("bus_school_access", { p_code: code }),
     createSchool: (settings, pin) => rpc("bus_create_school_owned", { p_settings: settings, p_pin: pin }),
     async getSchool(code) {
       const { data, error } = await sb.rpc("bus_get_school", { p_code: code });
@@ -522,6 +533,7 @@ const ERRORS = {
   signed_out: "Please sign in to your account first.",
   too_many_emails: "Too many sign-in emails were sent. Wait a few minutes and try again.",
   email_failed: "We couldn't send the sign-in email. Check the address and try again.",
+  subscription_needed: "This school's free trial has ended. Subscribe to keep calling buses.",
   school_limit: `Each account can have up to ${SCHOOL_LIMIT} schools for now. Need more? Email hello@dismissalmagic.com.`,
 };
 
@@ -756,6 +768,16 @@ function renderHome() {
   });
 }
 
+// Small status tag for a school in "My schools".
+function accessBadge(a) {
+  if (!a) return "";
+  if (a.reason === "trial") return `<span class="access-badge trial">Free trial · ${a.days_left} day${a.days_left === 1 ? "" : "s"} left</span>`;
+  if (a.reason === "paid") return `<span class="access-badge paid">Subscribed</span>`;
+  if (a.reason === "comped") return `<span class="access-badge paid">Free plan</span>`;
+  if (!a.active) return `<span class="access-badge ended">Trial ended · subscription needed</span>`;
+  return "";
+}
+
 // Creating a school needs an account; send people to sign in first, then straight back here.
 async function startSetup() {
   const u = await api.getUser();
@@ -850,7 +872,7 @@ function renderAccount(next) {
     r.schools.forEach((x) => rememberSchool(x.code, x.name));
     box.innerHTML = `<div class="recent-list">${r.schools.map((x) => `
       <div class="recent-row">
-        <div class="recent-name"><b>${esc(x.name || "School")}</b><span class="recent-code">${esc(x.code)}</span></div>
+        <div class="recent-name"><b>${esc(x.name || "School")}</b><span class="recent-code">${esc(x.code)}</span>${accessBadge(x.access)}</div>
         <div class="row">
           <a class="btn small" href="/${esc(x.code)}" target="_blank" rel="noopener" title="Opens in a new tab">Classroom screen ↗</a>
           <a class="btn small primary" href="/${esc(x.code)}/admin">School Dashboard</a>
@@ -1152,7 +1174,7 @@ function adminPanel(code, pin) {
     setStatus("live");
     if (!school) rememberSchool(code, s.settings.name);
     school = s;
-    if (!document.getElementById("admin-root")) { shell(); loadCount(); }
+    if (!document.getElementById("admin-root")) { shell(); loadCount(); loadAccess(); }
     draw();
   });
   cleanup = () => feed.stop();
@@ -1173,12 +1195,33 @@ function adminPanel(code, pin) {
         const r = await api.saveState(code, pin, next, base.version || 0);
         if (r?.ok) { school.state = r.state; draw(); api.notify(code); loadCountSoon(); return; }
         if (r?.error === "conflict") { school.state = r.state; continue; }
+        if (r?.error === "subscription_needed") { showAccess({ active: false, reason: "expired" }); toast(ERRORS.subscription_needed); return; }
         if (r?.error === "bad_pin" || r?.error === "locked") { alert(ERRORS[r.error] + " Please sign in again."); signOut(); return; }
         toast(ERRORS[r?.error] || ERRORS.network);
         return;
       }
       toast("Someone else is busy on the panel — try again.");
     } finally { busy = false; }
+  }
+
+  // Free trial / subscription status, shown above the bus cards.
+  async function loadAccess() { const a = await api.schoolAccess(code).catch(() => null); if (a && "active" in a) showAccess(a); }
+  function showAccess(a) {
+    const el = document.getElementById("access-strip");
+    if (!el) return;
+    el.className = "access-strip";
+    if (a.active && a.reason === "trial") {
+      el.innerHTML = `🎁 <b>Free trial</b> · ${a.days_left} day${a.days_left === 1 ? "" : "s"} left`;
+      if (a.days_left <= 7) el.classList.add("soon");
+      el.hidden = false;
+    } else if (!a.active) {
+      el.classList.add("ended");
+      el.innerHTML = `<div><b>Your free trial has ended.</b> Subscribe to keep calling buses. Classroom screens stay up, but new calls won't go out until you subscribe.</div>
+        <a class="btn primary" href="mailto:hello@dismissalmagic.com?subject=${encodeURIComponent("Subscribe: " + (school?.settings?.name || code))}">Subscribe</a>`;
+      el.hidden = false;
+    } else {
+      el.hidden = true; el.innerHTML = "";
+    }
   }
 
   let countTimer = null;
@@ -1205,6 +1248,7 @@ function adminPanel(code, pin) {
             <button class="btn small light" id="a-settings">Settings</button>
             <button class="btn small light" id="a-out">Sign out</button>
           </div>` })}
+        <section class="access-strip" id="access-strip" hidden></section>
         <section class="magic-strip" id="magic-strip" aria-live="polite"></section>
         <section class="group-bar" id="group-bar"></section>
         <section class="bus-grid" id="bus-grid"></section>
