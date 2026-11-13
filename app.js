@@ -46,7 +46,10 @@ function route() {
     const c = extractCode("/" + parts[0]);
     if (c) { code = c; admin = admin || /^admin$/i.test(parts[1] || ""); }
   }
-  if (!code && location.hash) code = extractCode("#" + location.hash.slice(1));
+  // /account — sign in and "My schools" (checked before the #hash, which may hold a sign-in token)
+  if (!code && /^account$/i.test(parts[0] || "")) return { account: true, next: params.get("next") || "" };
+  const authHash = /access_token=|refresh_token=|error_description=/.test(location.hash);
+  if (!code && location.hash && !authHash) code = extractCode("#" + location.hash.slice(1));
   code = code ? extractCode("/" + code) : null;
   const owner = !code && /^owner$/i.test(parts[0] || "");
   return { code, admin, owner };
@@ -342,13 +345,42 @@ function makeDemoApi() {
   window.addEventListener("storage", (e) => { if (e.key && e.key.startsWith("busdemo:")) fire(e.key.slice(8)); });
   const load = (c) => store.get(key(c));
   const save = (c, v) => store.set(key(c), v);
+  // Demo accounts: no email is sent — typing an email signs you in right away.
+  const authFns = [];
+  const demoUser = () => store.get("busdemo-user");
+  const fireAuth = () => authFns.forEach((fn) => fn(demoUser()));
   return {
+    async getUser() { return demoUser(); },
+    onAuthChange(fn) { authFns.push(fn); },
+    async signIn(email) { store.set("busdemo-user", { email }); fireAuth(); return { ok: true, instant: true }; },
+    async signOut() { store.del("busdemo-user"); fireAuth(); },
+    async mySchools() {
+      const u = demoUser();
+      if (!u) return { ok: false, error: "signed_out" };
+      const owners = store.get("busdemo-owners") || {};
+      const schools = Object.entries(owners).filter(([c, e]) => e === u.email && load(c)).map(([c]) => ({ code: c, name: load(c).settings?.name }));
+      return { ok: true, schools };
+    },
+    async claimSchool(code, pin) {
+      const u = demoUser();
+      if (!u) return { ok: false, error: "signed_out" };
+      const s = load(code);
+      if (!s) return { ok: false, error: "not_found" };
+      if (s.pin !== pin) return { ok: false, error: "bad_pin" };
+      const owners = store.get("busdemo-owners") || {};
+      if (owners[code] && owners[code] !== u.email) return { ok: false, error: "owned" };
+      owners[code] = u.email; store.set("busdemo-owners", owners);
+      return { ok: true, code };
+    },
     async createSchool(settings, pin) {
+      const u = demoUser();
+      if (!u) return { ok: false, error: "signed_out" };
       if (!/^\d{4,8}$/.test(pin)) return { ok: false, error: "pin_format" };
       const alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
       let code;
       do { code = Array.from({ length: 6 }, () => alpha[Math.floor(Math.random() * alpha.length)]).join(""); } while (load(code));
       save(code, { settings, state: { version: 0 }, pin });
+      const owners = store.get("busdemo-owners") || {}; owners[code] = u.email; store.set("busdemo-owners", owners);
       return { ok: true, code };
     },
     async findSchool(name, pin) {
@@ -432,7 +464,12 @@ function makeDemoApi() {
 
 async function makeSupabaseApi() {
   const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
-  const sb = createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, { auth: { persistSession: false } });
+  // Sessions are kept so school owners stay signed in. Classroom screens never sign in.
+  const sb = createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: "dm-auth" },
+  });
+  await sb.auth.getSession(); // finishes reading a sign-in link (#access_token…) before we route
+  if (/access_token=|refresh_token=|error_description=/.test(location.hash)) history.replaceState({}, "", location.pathname + location.search);
   const channels = new Map();
   async function rpc(fn, args) {
     const { data, error } = await sb.rpc(fn, args);
@@ -450,7 +487,18 @@ async function makeSupabaseApi() {
     return channels.get(code);
   }
   return {
-    createSchool: (settings, pin) => rpc("bus_create_school", { p_settings: settings, p_pin: pin }),
+    async getUser() { const { data } = await sb.auth.getSession(); return data?.session?.user ? { email: data.session.user.email } : null; },
+    onAuthChange(fn) { sb.auth.onAuthStateChange((_e, session) => fn(session?.user ? { email: session.user.email } : null)); },
+    async signIn(email, next) {
+      const back = `${location.origin}/account${next ? "?next=" + encodeURIComponent(next) : ""}`;
+      const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: back, shouldCreateUser: true } });
+      if (error) { console.error(error); return { ok: false, error: error.status === 429 ? "too_many_emails" : "email_failed" }; }
+      return { ok: true };
+    },
+    async signOut() { await sb.auth.signOut(); },
+    mySchools: () => rpc("bus_my_schools", {}),
+    claimSchool: (code, pin) => rpc("bus_claim_school", { p_code: code, p_pin: pin }),
+    createSchool: (settings, pin) => rpc("bus_create_school_owned", { p_settings: settings, p_pin: pin }),
     async getSchool(code) {
       const { data, error } = await sb.rpc("bus_get_school", { p_code: code });
       if (error) throw error;
@@ -481,6 +529,10 @@ const ERRORS = {
   pin_format: "The PIN must be 4–8 digits (numbers only).",
   network: "Couldn't reach the server. Check the internet connection and try again.",
   settings_invalid: "Those settings couldn't be saved.",
+  signed_out: "Please sign in to your account first.",
+  owned: "That school is already linked to a different account.",
+  too_many_emails: "Too many sign-in emails were sent. Wait a few minutes and try again.",
+  email_failed: "We couldn't send the sign-in email. Check the address and try again.",
 };
 
 /* ------------------------------- live feed ----------------------------- */
@@ -601,6 +653,7 @@ async function boot() {
   if (!api) api = DEMO ? makeDemoApi() : await makeSupabaseApi().catch((e) => { console.error(e); return null; });
   if (!api) { $app.innerHTML = `<div class="center-card card"><h2>Couldn't load</h2><p>Check your internet connection and refresh.</p></div>`; return; }
   const r = route();
+  if (r.account) return renderAccount(r.next);
   if (r.owner) return renderOwner();
   if (!r.code) return renderHome();
   if (r.admin) return renderAdmin(r.code);
@@ -644,6 +697,7 @@ function renderHome() {
           <h2>Set up your school</h2>
           <p class="muted">Pick your buses, how you call grades, and your colors. You'll get a school code and links to share.</p>
           <button class="btn primary big" id="start-setup">Create a school</button>
+          <p class="muted small account-line" id="account-line"><a href="/account">Sign in to your account</a> to see your schools.</p>
         </div>
       </div>
       ${(() => {
@@ -703,7 +757,133 @@ function renderHome() {
   }
   document.getElementById("join").onsubmit = (e) => { e.preventDefault(); open(false); };
   document.getElementById("join-admin").onclick = () => open(true);
-  document.getElementById("start-setup").onclick = () => renderSetup();
+  document.getElementById("start-setup").onclick = () => startSetup();
+  const wireAcct = () => document.querySelector("#account-line a")?.addEventListener("click", (e) => { e.preventDefault(); go("/account"); });
+  wireAcct();
+  api.getUser().then((u) => {
+    const el = document.getElementById("account-line");
+    if (el && u) { el.innerHTML = `Signed in as <b>${esc(u.email)}</b> · <a href="/account">My schools</a>`; wireAcct(); }
+  });
+}
+
+// Creating a school needs an account; send people to sign in first, then straight back here.
+async function startSetup() {
+  const u = await api.getUser();
+  if (!u) return go("/account?next=create");
+  renderSetup();
+}
+
+/* =============================== ACCOUNT ================================ */
+// School owners sign in with an emailed link (no passwords). Teachers never need this.
+function renderAccount(next) {
+  applyTheme(THEMES.STEMstarters);
+  document.title = "Your account — Dismissal Magic";
+  let unsub = false, shown, seq = 0;
+  cleanup = () => { unsub = true; };
+  // Redraw only when signing in/out actually changes who's signed in (e.g. the link was opened in another tab).
+  api.onAuthChange((u) => { if (!unsub && (u?.email || null) !== shown) draw(); });
+  draw();
+
+  async function draw() {
+    if (unsub) return;
+    const mine = ++seq;
+    const u = await api.getUser();
+    if (mine !== seq || unsub) return; // a newer redraw is already on its way
+    shown = u?.email || null;
+    if (u && next === "create") { history.replaceState({}, "", "/account"); next = ""; return renderSetup(); }
+    if (!u) return drawSignIn();
+    drawSignedIn(u);
+  }
+
+  function drawSignIn() {
+    $app.innerHTML = `${demoBanner()}
+      <div class="center-card card account">
+        <div class="hero-bus small">${busSVG("#ffd23f", "drive-in")}</div>
+        <h1>${next === "create" ? "First, sign in" : "Sign in"}</h1>
+        <p class="muted">${next === "create" ? "Your school will be linked to your account so you can always find it." : "For school owners. Teachers don't need an account; they just open the classroom link."}</p>
+        <form id="signin" class="stack">
+          <label class="sr" for="signin-email">Email</label>
+          <input id="signin-email" type="email" class="code-input email-input" placeholder="you@school.org" autocomplete="email" required />
+          <button class="btn primary big" type="submit">Email me a sign-in link</button>
+          <p class="err" id="signin-err"></p>
+        </form>
+        <div id="signin-sent"></div>
+        <p class="muted small">No password needed. New here? The same link creates your account.</p>
+        <p><a href="/" class="muted" id="acct-home">← Home</a></p>
+      </div>`;
+    document.getElementById("acct-home").onclick = (e) => { e.preventDefault(); go("/"); };
+    document.getElementById("signin").onsubmit = async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("signin-email").value.trim();
+      const err = document.getElementById("signin-err");
+      const btn = e.target.querySelector("button");
+      err.textContent = ""; btn.disabled = true;
+      const r = await api.signIn(email, next);
+      btn.disabled = false;
+      if (!r?.ok) { err.textContent = ERRORS[r?.error] || ERRORS.network; return; }
+      if (r.instant) return; // demo mode: the sign-in listener redraws
+      e.target.hidden = true;
+      document.getElementById("signin-sent").innerHTML = `<div class="share-row found"><div>📬 <b>Check your email.</b> We sent a sign-in link to <b>${esc(email)}</b>. Open it on this device.</div></div>`;
+    };
+  }
+
+  async function drawSignedIn(u) {
+    $app.innerHTML = `${demoBanner()}
+      <div class="page account">
+        ${headBlock({ left: `<button class="btn small light back" id="back">← Home</button>`, pill: "Your account", title: "My schools", sub: `Signed in as ${esc(u.email)}`, right: `<div class="head-bus">${busSVG("#ffd23f")}</div>` })}
+        <section class="card step s1">
+          <div class="row wrap between"><h2>Your schools</h2><button class="btn primary" id="acct-create">+ Create a school</button></div>
+          <div id="my-schools"><p class="muted">Loading…</p></div>
+        </section>
+        <section class="card step s4 find-card">
+          <h2>Add a school you already set up</h2>
+          <p class="muted">Made a school before accounts? Link it here with its code and master panel PIN.</p>
+          <form id="claim" class="find-form">
+            <label>School code<input id="claim-code" maxlength="80" placeholder="ABC123" autocomplete="off" autocapitalize="characters" required /></label>
+            <label>PIN<input id="claim-pin" type="password" inputmode="numeric" autocomplete="current-password" required /></label>
+            <button class="btn primary" type="submit">Add school</button>
+          </form>
+          <p class="err" id="claim-err"></p>
+        </section>
+        <div class="row center"><button class="btn" id="acct-signout">Sign out</button></div>
+        <footer class="app-foot">© 2026 STEMstarters LLC · <a href="https://dismissalmagic.com/privacy">Privacy Policy</a> · <a href="https://dismissalmagic.com/terms">Terms of Service</a></footer>
+      </div>`;
+    document.getElementById("back").onclick = () => go("/");
+    document.getElementById("acct-create").onclick = () => renderSetup();
+    document.getElementById("acct-signout").onclick = async () => { await api.signOut(); go("/"); };
+    document.getElementById("claim").onsubmit = async (e) => {
+      e.preventDefault();
+      const err = document.getElementById("claim-err");
+      const code = extractCode("/" + document.getElementById("claim-code").value.trim().replace(/^\/+/, ""));
+      const pin = document.getElementById("claim-pin").value.trim();
+      err.textContent = "";
+      if (!code) { err.textContent = "Type the 6-letter school code (or paste the link)."; return; }
+      const r = await api.claimSchool(code, pin);
+      if (!r?.ok) { err.textContent = ERRORS[r?.error] || ERRORS.network; return; }
+      toast(r.already ? "That school is already in your account." : "School added to your account!");
+      e.target.reset();
+      loadSchools();
+    };
+    loadSchools();
+  }
+
+  async function loadSchools() {
+    const box = document.getElementById("my-schools");
+    if (!box) return;
+    const r = await api.mySchools();
+    if (!r?.ok) { box.innerHTML = `<p class="err">${esc(ERRORS[r?.error] || ERRORS.network)}</p>`; return; }
+    if (!r.schools.length) { box.innerHTML = `<p class="muted">No schools yet. Create one, or add a school you already set up below.</p>`; return; }
+    r.schools.forEach((x) => rememberSchool(x.code, x.name));
+    box.innerHTML = `<div class="recent-list">${r.schools.map((x) => `
+      <div class="recent-row">
+        <div class="recent-name"><b>${esc(x.name || "School")}</b><span class="recent-code">${esc(x.code)}</span></div>
+        <div class="row">
+          <a class="btn small" href="/${esc(x.code)}">Classroom screen</a>
+          <a class="btn small primary" href="/${esc(x.code)}/admin">Master panel</a>
+        </div>
+      </div>`).join("")}</div>`;
+    box.querySelectorAll("a").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
+  }
 }
 
 /* =========================== SETTINGS EDITOR =========================== */
@@ -886,10 +1066,10 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete
 
 function renderSetup() {
   $app.innerHTML = `${demoBanner()}<div class="page">${headBlock({ left: `<button class="btn small light back" id="back">← Back</button>`, title: "Set up your school", sub: "5 easy steps, then call your buses!", right: `<div class="head-bus">${busSVG("#ffd23f", "drive-in")}</div>` })}<div id="editor"></div></div>`;
-  document.getElementById("back").onclick = () => renderHome();
+  document.getElementById("back").onclick = () => go("/");
   settingsEditor(document.getElementById("editor"), defaultSettings(), {
     mode: "create",
-    onCancel: () => renderHome(),
+    onCancel: () => go("/"),
     async onSubmit(settings, pin) {
       const r = await api.createSchool(settings, pin);
       if (!r?.ok) return ERRORS[r?.error] || ERRORS.network;
