@@ -382,6 +382,8 @@ label.color-pick { flex-direction: row; align-items: center; gap: 8px; }
 
 /* ---------- home: remembered schools + forgot code ---------- */
 .recent-card, .find-card { margin-top: 28px; }
+.recent-card.top { margin: 0 0 28px; }
+.account-line.center { text-align: center; margin-top: 18px; }
 .recent-list { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
 .recent-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: #E1FBF5; border-radius: 20px; padding: 10px 14px; }
 .recent-name { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 1.1rem; }

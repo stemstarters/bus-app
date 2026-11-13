@@ -770,10 +770,26 @@ function forgetSchool(code) { store.set("busrecent", (store.get("busrecent") || 
 function renderHome() {
   applyTheme(THEMES.STEMstarters);
   document.title = "Dismissal Magic — quiet bus calls for every classroom";
+  const recent = store.get("busrecent") || [];
   $app.innerHTML = `
     ${demoBanner()}
     <div class="home">
       ${headBlock({ pill: "For schools", title: wordmark(), sub: "Quiet bus calls, like magic. Call buses by grade. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed.", right: `<div class="head-bus">${busSVG("#ffd23f", "drive-in")}</div>` })}
+      ${(() => {
+        if (!recent.length) return "";
+        return `<section class="card step s3 recent-card top">
+          <h2>${recent.length === 1 ? "Your school" : "Your schools on this device"}</h2>
+          <div class="recent-list">${recent.map((r) => `
+            <div class="recent-row">
+              <div class="recent-name"><b>${esc(r.name || "School")}</b><span class="recent-code">${esc(r.code)}</span></div>
+              <div class="row">
+                <a class="btn small" href="/${esc(r.code)}" target="_blank" rel="noopener" title="Opens in a new tab">Classroom screen ↗</a>
+                <a class="btn small primary" href="/${esc(r.code)}/admin">School Dashboard</a>
+                <button class="icon-btn" type="button" data-forget="${esc(r.code)}" aria-label="Remove ${esc(r.name || r.code)} from this list"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
+              </div>
+            </div>`).join("")}</div>
+        </section>`;
+      })()}
       <div class="home-grid">
         <div class="card step s1">
           <h2>Have a school code?</h2>
@@ -786,57 +802,18 @@ function renderHome() {
             <p class="err" id="join-err"></p>
           </form>
         </div>
-        <div class="card step s2">
+        ${recent.length ? "" : `<div class="card step s2" id="setup-card">
           <h2>Set up your school</h2>
           <p class="muted">Pick your buses, how you call grades, and your colors. You'll get a school code and links to share.</p>
           <button class="btn primary big" id="start-setup">Create a school</button>
           <p class="muted small account-line" id="account-line"><a href="/account">Sign in to your account</a> to see your schools.</p>
-        </div>
+        </div>`}
       </div>
-      ${(() => {
-        const recent = store.get("busrecent") || [];
-        if (!recent.length) return "";
-        return `<section class="card step s3 recent-card">
-          <h2>Your schools on this device</h2>
-          <div class="recent-list">${recent.map((r) => `
-            <div class="recent-row">
-              <div class="recent-name"><b>${esc(r.name || "School")}</b><span class="recent-code">${esc(r.code)}</span></div>
-              <div class="row">
-                <a class="btn small" href="/${esc(r.code)}" target="_blank" rel="noopener" title="Opens in a new tab">Classroom screen ↗</a>
-                <a class="btn small primary" href="/${esc(r.code)}/admin">School Dashboard</a>
-                <button class="icon-btn" type="button" data-forget="${esc(r.code)}" aria-label="Remove ${esc(r.name || r.code)} from this list"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
-              </div>
-            </div>`).join("")}</div>
-        </section>`;
-      })()}
-      <section class="card step s4 find-card">
-        <h2>Forgot your school code?</h2>
-        <p class="muted">Type your school name exactly as you set it up, plus your School Dashboard PIN.</p>
-        <form id="find" class="find-form">
-          <label>School name<input id="find-name" autocomplete="organization" placeholder="e.g. Sunnyside Elementary" required /></label>
-          <label>PIN<input id="find-pin" type="password" inputmode="numeric" autocomplete="current-password" required /></label>
-          <button class="btn primary" type="submit">Find my code</button>
-        </form>
-        <p class="err" id="find-err"></p>
-        <div id="find-result"></div>
-      </section>
+      ${recent.length ? `<p class="muted small account-line center" id="account-line"><a href="/account">Sign in to your account</a> to manage your school and billing.</p>` : ""}
       <footer class="app-foot">© 2026 STEMstarters LLC · <a href="https://dismissalmagic.com/privacy">Privacy Policy</a> · <a href="https://dismissalmagic.com/terms">Terms of Service</a></footer>
     </div>`;
   document.querySelectorAll("[data-forget]").forEach((b) => (b.onclick = () => { forgetSchool(b.dataset.forget); renderHome(); }));
   document.querySelectorAll(".recent-row a:not([target])").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
-  document.getElementById("find").onsubmit = async (e) => {
-    e.preventDefault();
-    const err = document.getElementById("find-err"), out = document.getElementById("find-result");
-    err.textContent = ""; out.innerHTML = "";
-    const name = document.getElementById("find-name").value.trim();
-    const pin = document.getElementById("find-pin").value.trim();
-    const r = await api.findSchool(name, pin);
-    if (!r?.ok) { err.textContent = r?.error === "locked" ? ERRORS.locked : r?.error === "no_match" ? "No school matched that name and PIN. Check the spelling of the school name." : (ERRORS[r?.error] || ERRORS.network); return; }
-    r.schools.forEach((x) => rememberSchool(x.code, x.name));
-    out.innerHTML = r.schools.map((x) => `<div class="share-row found"><div><b>${esc(x.name)}</b><div class="big-code">${esc(x.code)}</div></div>
-      <div class="row"><a class="btn small" href="/${esc(x.code)}">Classroom screen</a><a class="btn small primary" href="/${esc(x.code)}/admin">School Dashboard</a></div></div>`).join("");
-    out.querySelectorAll("a").forEach((a) => (a.onclick = (ev) => { ev.preventDefault(); sess.set("buspin:" + a.getAttribute("href").split("/")[1], pin); go(a.getAttribute("href")); }));
-  };
   const codeEl = document.getElementById("join-code");
   async function open(admin) {
     const err = document.getElementById("join-err");
@@ -850,12 +827,16 @@ function renderHome() {
   }
   document.getElementById("join").onsubmit = (e) => { e.preventDefault(); open(false); };
   document.getElementById("join-admin").onclick = () => open(true);
-  document.getElementById("start-setup").onclick = () => startSetup();
+  const setupBtn = document.getElementById("start-setup");
+  if (setupBtn) setupBtn.onclick = () => startSetup();
   const wireAcct = () => document.querySelector("#account-line a")?.addEventListener("click", (e) => { e.preventDefault(); go("/account"); });
   wireAcct();
   api.getUser().then((u) => {
     const el = document.getElementById("account-line");
-    if (el && u) { el.innerHTML = `Signed in as <b>${esc(u.email)}</b> · <a href="/account">My schools</a>`; wireAcct(); }
+    if (el && u) { el.innerHTML = `Signed in as <b>${esc(u.email)}</b> · <a href="/account">My school</a>`; wireAcct(); }
+    if (u) api.mySchools().then((r) => {
+      if (r?.ok && r.schools.length >= (r.limit ?? SCHOOL_LIMIT)) document.getElementById("setup-card")?.remove();
+    }).catch(() => {});
   });
 }
 
