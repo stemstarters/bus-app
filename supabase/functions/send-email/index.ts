@@ -89,8 +89,10 @@ function headerFor(brand: Brand) {
       <img src="https://app.dismissalmagic.com/email/3d-print-quest-logo.png" width="300" height="48" alt="3D Print Quest" style="display:block;width:300px;max-width:100%;height:auto;border:0;font:bold 26px Arial,Helvetica,sans-serif;color:#9246DD">
     </td></tr>`;
   }
-  return `<tr><td style="background:${brand.color};padding:22px 28px;font:bold 22px Arial,Helvetica,sans-serif;color:#ffffff">${brand.emoji} ${esc(brand.name)}
-      <div style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${brand.accent};margin-left:6px"></div></td></tr>`;
+  // Dismissal Magic logo, hosted with the site files (email/dismissal-magic-logo.png).
+  return `<tr><td align="center" style="background:#ffffff;padding:24px 28px 18px;border-bottom:3px solid #2b2d42">
+      <img src="https://app.dismissalmagic.com/email/dismissal-magic-logo.png" width="320" alt="Dismissal Magic" style="display:block;width:320px;max-width:100%;height:auto;border:0;font:bold 26px Arial,Helvetica,sans-serif;color:#9246DD">
+    </td></tr>`;
 }
 
 function renderEmail(brand: Brand, action: string, link: string, code: string) {
