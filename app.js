@@ -11,6 +11,7 @@ const $app = document.getElementById("app");
 const $modal = document.getElementById("modal-root");
 const DEMO = !CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey;
 const GO_NOW_MS = 5 * 60 * 1000; // how long a call shows as "GO NOW"
+const SCHOOL_LIMIT = 3; // schools per account (the database enforces this; see supabase/02-school-limit.sql)
 
 /* ---------------------------- small helpers ---------------------------- */
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -376,6 +377,7 @@ function makeDemoApi() {
       const u = demoUser();
       if (!u) return { ok: false, error: "signed_out" };
       if (!/^\d{4,8}$/.test(pin)) return { ok: false, error: "pin_format" };
+      if (Object.values(store.get("busdemo-owners") || {}).filter((e) => e === u.email).length >= SCHOOL_LIMIT) return { ok: false, error: "school_limit" };
       const alpha = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
       let code;
       do { code = Array.from({ length: 6 }, () => alpha[Math.floor(Math.random() * alpha.length)]).join(""); } while (load(code));
@@ -533,6 +535,7 @@ const ERRORS = {
   owned: "That school is already linked to a different account.",
   too_many_emails: "Too many sign-in emails were sent. Wait a few minutes and try again.",
   email_failed: "We couldn't send the sign-in email. Check the address and try again.",
+  school_limit: `Each account can have up to ${SCHOOL_LIMIT} schools for now. Need more? Email hello@dismissalmagic.com.`,
 };
 
 /* ------------------------------- live feed ----------------------------- */
@@ -770,7 +773,14 @@ function renderHome() {
 async function startSetup() {
   const u = await api.getUser();
   if (!u) return go("/account?next=create");
+  if (!(await roomForSchool())) return go("/account");
   renderSetup();
+}
+// Check the limit before someone fills out the whole setup form.
+async function roomForSchool() {
+  const r = await api.mySchools().catch(() => null);
+  if (r?.ok && r.schools.length >= SCHOOL_LIMIT) { toast(ERRORS.school_limit); return false; }
+  return true;
 }
 
 /* =============================== ACCOUNT ================================ */
@@ -790,7 +800,7 @@ function renderAccount(next) {
     const u = await api.getUser();
     if (mine !== seq || unsub) return; // a newer redraw is already on its way
     shown = u?.email || null;
-    if (u && next === "create") { history.replaceState({}, "", "/account"); next = ""; return renderSetup(); }
+    if (u && next === "create") { history.replaceState({}, "", "/account"); next = ""; if (await roomForSchool()) return renderSetup(); }
     if (!u) return drawSignIn();
     drawSignedIn(u);
   }
@@ -849,7 +859,7 @@ function renderAccount(next) {
         <footer class="app-foot">© 2026 STEMstarters LLC · <a href="https://dismissalmagic.com/privacy">Privacy Policy</a> · <a href="https://dismissalmagic.com/terms">Terms of Service</a></footer>
       </div>`;
     document.getElementById("back").onclick = () => go("/");
-    document.getElementById("acct-create").onclick = () => renderSetup();
+    document.getElementById("acct-create").onclick = async () => { if (await roomForSchool()) renderSetup(); };
     document.getElementById("acct-signout").onclick = async () => { await api.signOut(); go("/"); };
     document.getElementById("claim").onsubmit = async (e) => {
       e.preventDefault();
