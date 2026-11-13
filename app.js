@@ -699,7 +699,12 @@ async function boot() {
   if (r.demo) return renderDemo(r.view);
   if (r.account) return renderAccount(r.next);
   if (r.owner) return renderOwner();
-  if (!r.code) return renderHome();
+  if (!r.code) {
+    // Signed-in school owners land on their account page instead of the public home page.
+    const u = await api.getUser().catch(() => null);
+    if (u) { history.replaceState({}, "", "/account"); return renderAccount(); }
+    return renderHome();
+  }
   if (r.admin) return renderAdmin(r.code);
   return renderDisplay(r.code);
 }
@@ -937,15 +942,14 @@ function renderAccount(next) {
   async function drawSignedIn(u) {
     $app.innerHTML = `${demoBanner()}
       <div class="page account">
-        ${headBlock({ left: `<button class="btn small light back" id="back">← Home</button>`, pill: "Your account", title: "My schools", sub: `Signed in as ${esc(u.email)}`, right: `<div class="head-bus">${busSVG("#ffd23f")}</div>` })}
+        ${headBlock({ pill: "Your account", title: "My school", sub: `Signed in as ${esc(u.email)}`, right: `<div class="head-bus">${busSVG("#ffd23f")}</div>` })}
         <section class="card step s1">
-          <div class="row wrap between"><h2>Your schools</h2><button class="btn primary" id="acct-create">+ Create a school</button></div>
+          <div class="row wrap between"><h2>Your school</h2><button class="btn primary" id="acct-create">+ Create a school</button></div>
           <div id="my-schools"><p class="muted">Loading…</p></div>
         </section>
         <div class="row center"><button class="btn" id="acct-signout">Sign out</button></div>
         <footer class="app-foot">© 2026 STEMstarters LLC · <a href="https://dismissalmagic.com/privacy">Privacy Policy</a> · <a href="https://dismissalmagic.com/terms">Terms of Service</a></footer>
       </div>`;
-    document.getElementById("back").onclick = () => go("/");
     document.getElementById("acct-create").onclick = async () => { if (await roomForSchool()) renderSetup(); };
     document.getElementById("acct-signout").onclick = async () => { await api.signOut(); go("/"); };
     loadSchools();
@@ -958,7 +962,7 @@ function renderAccount(next) {
     if (!r?.ok) { box.innerHTML = `<p class="err">${esc(ERRORS[r?.error] || ERRORS.network)}</p>`; return; }
     const createBtn = document.getElementById("acct-create");
     if (createBtn) createBtn.hidden = r.schools.length >= (r.limit ?? SCHOOL_LIMIT); // one school per account
-    if (!r.schools.length) { box.innerHTML = `<p class="muted">No schools yet. Create your first one!</p>`; return; }
+    if (!r.schools.length) { box.innerHTML = `<p class="muted">No school yet. Create yours to get started!</p>`; return; }
     r.schools.forEach((x) => rememberSchool(x.code, x.name));
     box.innerHTML = `<div class="recent-list">${r.schools.map((x) => `
       <div class="recent-row">
