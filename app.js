@@ -832,18 +832,38 @@ function renderSetup() {
 }
 
 function shareBlock(code) {
+  const cls = linkFor(code, false), adm = linkFor(code, true);
   return `
     <div class="share">
-      <div class="share-row"><div><b>School code</b><div class="big-code">${esc(code)}</div></div></div>
-      <div class="share-row"><div><b>Classroom screen link</b> — send to teachers<div class="link">${esc(linkFor(code, false))}</div></div><button class="btn small" data-copy="${esc(linkFor(code, false))}">Copy</button></div>
-      <div class="share-row"><div><b>Master panel link</b> — for you and your backups (needs the PIN)<div class="link">${esc(linkFor(code, true))}</div></div><button class="btn small" data-copy="${esc(linkFor(code, true))}">Copy</button></div>
+      <div class="share-row big">
+        <div><b>📺 Classroom screen link</b> <span class="muted small">— send this to teachers</span><div class="link">${esc(cls)}</div></div>
+        <div class="row nowrap"><button class="btn small primary" data-copy="${esc(cls)}" data-what="Classroom link">Copy link</button><a class="btn small" href="${esc(cls)}" target="_blank" rel="noopener">Open</a></div>
+      </div>
+      <div class="share-row">
+        <div><b>🔐 Master panel link</b> <span class="muted small">— for you and your backups (needs the PIN)</span><div class="link">${esc(adm)}</div></div>
+        <div class="row nowrap"><button class="btn small" data-copy="${esc(adm)}" data-what="Master panel link">Copy link</button><a class="btn small" href="${esc(adm)}" target="_blank" rel="noopener">Open</a></div>
+      </div>
+      <div class="share-row">
+        <div><b>School code</b><div class="big-code">${esc(code)}</div></div>
+        <button class="btn small" data-copy="${esc(code)}" data-what="School code">Copy code</button>
+      </div>
     </div>`;
 }
 function wireCopy(root) {
   root.querySelectorAll("[data-copy]").forEach((b) => (b.onclick = async () => {
-    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied!"; }
-    catch { prompt("Copy this link:", b.dataset.copy); }
-    setTimeout(() => (b.textContent = "Copy"), 1500);
+    const label = b.textContent, text = b.dataset.copy;
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {}
+    if (!ok) {
+      // Fallback for browsers that block the clipboard API
+      const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { ok = document.execCommand("copy"); } catch {}
+      ta.remove();
+    }
+    if (ok) { b.textContent = "Copied!"; toast(`${b.dataset.what || "Copied"}: ${text}`); }
+    else prompt("Copy this:", text);
+    setTimeout(() => (b.textContent = label), 1500);
   }));
 }
 
