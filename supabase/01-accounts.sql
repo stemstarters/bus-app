@@ -95,7 +95,7 @@ end $$;
 
 -- ---------------------------------------------------------------------
 -- Add a school that was set up before accounts (needs its code + PIN).
--- Only works if no other account owns it yet.
+-- Only works if no other account owns it yet. (Removed later by 03-remove-claim.sql.)
 -- ---------------------------------------------------------------------
 create or replace function public.bus_claim_school(p_code text, p_pin text)
 returns jsonb
