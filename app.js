@@ -508,7 +508,7 @@ async function makeSupabaseApi() {
     schoolAccess: (code) => rpc("bus_school_access", { p_code: code }),
     // Stripe: returns { ok, url } to send the owner to checkout or the billing portal.
     async billing(action, code) {
-      const { data, error } = await sb.functions.invoke("billing", { body: { action, code } });
+      const { data, error } = await sb.functions.invoke("dm-billing", { body: { action, code } });
       if (error) { console.error(error); return { ok: false, error: "billing_failed" }; }
       return data;
     },

@@ -1,5 +1,5 @@
 // =====================================================================
-// stripe-webhook — keeps each school's "paid until" date in sync with Stripe
+// dm-stripe-webhook — keeps each school's "paid until" date in sync with Stripe
 //
 // Stripe calls this when a Dismissal Magic subscription starts, renews,
 // changes or ends. We re-read the subscription from Stripe and save it to
@@ -8,7 +8,8 @@
 //
 // Secrets (Supabase → Edge Functions → Secrets):
 //   STRIPE_SECRET_KEY       sk_live_… (same as the billing function)
-//   STRIPE_WEBHOOK_SECRET   whsec_…  from Stripe → Developers → Webhooks → this endpoint
+//   DM_STRIPE_WEBHOOK_SECRET  whsec_…  from Stripe → Developers → Webhooks → the Dismissal Magic endpoint
+//   (named DM_… so it doesn't overwrite 3D Print Quest's STRIPE_WEBHOOK_SECRET)
 // Optional: STRIPE_PRICE_FOUNDING (default below)
 // Turn "Verify JWT" OFF for this function (Stripe signs its own requests).
 // =====================================================================
@@ -44,7 +45,7 @@ async function getSubscription(id: string) {
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("method", { status: 405 });
   const payload = await req.text();
-  const ok = await verify(payload, req.headers.get("stripe-signature") || "", Deno.env.get("STRIPE_WEBHOOK_SECRET") || "");
+  const ok = await verify(payload, req.headers.get("stripe-signature") || "", Deno.env.get("DM_STRIPE_WEBHOOK_SECRET") || "");
   if (!ok) return new Response("bad signature", { status: 400 });
 
   const event = JSON.parse(payload);
