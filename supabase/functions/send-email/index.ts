@@ -44,8 +44,8 @@ const BRANDS: Record<string, Brand> = {
     name: "3D Print Quest",
     from: "3D Print Quest <noreply@mail.stemstarters.com>",
     site: "app.stemstarters.com",
-    color: "#2FC2A3",
-    accent: "#FC52B3",
+    color: "#9246DD",
+    accent: "#2FC2A3",
     bg: "#f3fbf9",
     emoji: "🧩",
     tagline: "A STEMstarters app.",
@@ -81,6 +81,18 @@ function copyFor(action: string, brand: Brand) {
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
+// Top band. 3D Print Quest's mirrors its logo in live text (shows even when images are blocked).
+function headerFor(brand: Brand) {
+  if (brand.key === "quest") {
+    // Logo is hosted with the Dismissal Magic site files (email/3d-print-quest-logo.png). Alt text shows if images are blocked.
+    return `<tr><td align="center" style="background:#ffffff;padding:24px 28px 18px;border-bottom:3px solid #2b2d42">
+      <img src="https://app.dismissalmagic.com/email/3d-print-quest-logo.png" width="300" height="48" alt="3D Print Quest" style="display:block;width:300px;max-width:100%;height:auto;border:0;font:bold 26px Arial,Helvetica,sans-serif;color:#9246DD">
+    </td></tr>`;
+  }
+  return `<tr><td style="background:${brand.color};padding:22px 28px;font:bold 22px Arial,Helvetica,sans-serif;color:#ffffff">${brand.emoji} ${esc(brand.name)}
+      <div style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${brand.accent};margin-left:6px"></div></td></tr>`;
+}
+
 function renderEmail(brand: Brand, action: string, link: string, code: string) {
   const c = copyFor(action, brand);
   const button = c.button
@@ -97,8 +109,7 @@ function renderEmail(brand: Brand, action: string, link: string, code: string) {
 <body style="margin:0;padding:0;background:${brand.bg}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${brand.bg};padding:28px 12px"><tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:24px;border:3px solid #2b2d42;overflow:hidden">
-    <tr><td style="background:${brand.color};padding:22px 28px;font:bold 22px Arial,Helvetica,sans-serif;color:#ffffff">${brand.emoji} ${esc(brand.name)}
-      <div style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${brand.accent};margin-left:6px"></div></td></tr>
+    ${headerFor(brand)}
     <tr><td style="padding:28px 28px 8px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         <tr><td style="font:bold 26px/1.25 Arial,Helvetica,sans-serif;color:#2b2d42;padding-bottom:10px">${esc(c.title)}</td></tr>
