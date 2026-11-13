@@ -493,3 +493,8 @@ table.data .mono { font: 800 1rem var(--head); letter-spacing: .12em; color: #13
 .demo-page p.center { text-align: center; margin-top: 14px; }
 .demo-actions a.btn, .demo-banner a { text-decoration: none; }
 .demo-banner a { text-decoration: underline; }
+
+/* ---------- vans & walkers: one "Call everyone" button ---------- */
+.cells.one { grid-template-columns: 1fr; }
+.cell.call-all { width: 100%; }
+.cell.call-all span { font-size: 1.05rem; }
