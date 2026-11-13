@@ -13,10 +13,17 @@
 //   STRIPE_SECRET_KEY   sk_live_… (or sk_test_… while testing)
 // Optional secrets (defaults below):
 //   STRIPE_PRICE_FOUNDING, STRIPE_PRICE_REGULAR, FOUNDING_LIMIT, APP_URL
-// SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided automatically.
-// Leave "Verify JWT" ON for this function.
+// SUPABASE_URL and the Supabase server key are provided automatically.
+// "Verify JWT" can be OFF: this function checks who's signed in itself (needed with Supabase's newer keys).
 // =====================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Supabase's server key: newer projects provide SUPABASE_SECRET_KEYS (JSON), older ones SUPABASE_SERVICE_ROLE_KEY.
+function serverKey(): string {
+  const many = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (many) { try { const v = Object.values(JSON.parse(many)); if (v.length) return String(v[0]); } catch (_) { /* ignore */ } }
+  return Deno.env.get("SUPABASE_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+}
 
 const PRICE_FOUNDING = Deno.env.get("STRIPE_PRICE_FOUNDING") || "price_1UbNdmPhls0y9gMoJDTiwBGY"; // $149/yr
 const PRICE_REGULAR = Deno.env.get("STRIPE_PRICE_REGULAR") || "price_1UbNeSPhls0y9gMoYwCVekyS";   // $249/yr
@@ -51,7 +58,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ ok: false, error: "method" }, 405);
 
-  const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+  if (!Deno.env.get("STRIPE_SECRET_KEY")) { console.error("Missing STRIPE_SECRET_KEY secret"); return reply({ ok: false, error: "billing_failed" }); }
+  if (!serverKey()) { console.error("No Supabase server key found"); return reply({ ok: false, error: "billing_failed" }); }
+  const db = createClient(Deno.env.get("SUPABASE_URL")!, serverKey(), {
     auth: { persistSession: false },
   });
 
