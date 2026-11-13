@@ -500,3 +500,16 @@ table.data .mono { font: 800 1rem var(--head); letter-spacing: .12em; color: #13
 .cells.one { grid-template-columns: 1fr; }
 .cell.call-all { width: 100%; }
 .cell.call-all span { font-size: 1.05rem; }
+
+/* account page: one school */
+.school-hero { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; }
+.hero-code .big-code { font-size: 2.6rem; }
+.hero-code .access-badge { margin-top: 6px; display: inline-block; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.account .card + .card, .account .card + .row { margin-top: 24px; }
+.roles { margin: 6px 0 0; padding-left: 1.2em; line-height: 1.7; }
+.roles-card { background: transparent; box-shadow: none; border: 2px dashed rgba(43,45,66,.18); }
+.admin-list { list-style: none; padding: 0; margin: 8px 0 12px; display: grid; gap: 8px; }
+.admin-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--soft, #f3ecff); border-radius: 14px; padding: 8px 12px; }
+.admin-add input { flex: 1; min-width: 0; }
+.account a.btn { text-decoration: none; }

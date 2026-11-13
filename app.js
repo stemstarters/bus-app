@@ -383,10 +383,35 @@ function makeDemoApi() {
     async mySchools() {
       const u = demoUser();
       if (!u) return { ok: false, error: "signed_out" };
-      const owners = store.get("busdemo-owners") || {};
-      const schools = Object.entries(owners).filter(([c, e]) => e === u.email && load(c)).map(([c]) => ({ code: c, name: load(c).settings?.name }));
+      const owners = store.get("busdemo-owners") || {}, admins = store.get("busdemo-admins") || {};
+      const mine = Object.entries(owners).filter(([c, e]) => e === u.email && load(c)).map(([c]) => ({ code: c, name: load(c).settings?.name, role: "owner" }));
+      const helping = Object.entries(admins).filter(([c, list]) => owners[c] !== u.email && list.includes(u.email.toLowerCase()) && load(c)).map(([c]) => ({ code: c, name: load(c).settings?.name, role: "admin" }));
+      const schools = [...mine, ...helping];
       for (const x of schools) x.access = await this.schoolAccess(x.code);
-      return { ok: true, schools };
+      return { ok: true, schools, owned: mine.length, limit: SCHOOL_LIMIT };
+    },
+    async amAdmin(code) {
+      const u = demoUser(), owner = (store.get("busdemo-owners") || {})[code];
+      if (!owner) return { ok: true, admin: false, owner: false, legacy: true };
+      const isOwner = !!u && u.email === owner;
+      const isAdmin = isOwner || (!!u && ((store.get("busdemo-admins") || {})[code] || []).includes(u.email.toLowerCase()));
+      return { ok: true, admin: isAdmin, owner: isOwner, legacy: false };
+    },
+    async listAdmins(code) {
+      if (!(await this.amAdmin(code)).owner) return { ok: false, error: "not_owner" };
+      return { ok: true, admins: ((store.get("busdemo-admins") || {})[code] || []).map((email) => ({ email })) };
+    },
+    async addAdmin(code, email) {
+      if (!(await this.amAdmin(code)).owner) return { ok: false, error: "not_owner" };
+      email = String(email || "").trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: "email_invalid" };
+      const all = store.get("busdemo-admins") || {}; all[code] = [...new Set([...(all[code] || []), email])]; store.set("busdemo-admins", all);
+      return { ok: true };
+    },
+    async removeAdmin(code, email) {
+      if (!(await this.amAdmin(code)).owner) return { ok: false, error: "not_owner" };
+      const all = store.get("busdemo-admins") || {}; all[code] = (all[code] || []).filter((e) => e !== email); store.set("busdemo-admins", all);
+      return { ok: true };
     },
     async createSchool(settings, pin) {
       const u = demoUser();
@@ -415,7 +440,9 @@ function makeDemoApi() {
     async deleteSchool(code, pin, name) {
       const s = load(code);
       if (!s) return { ok: false, error: "not_found" };
-      if (s.pin !== pin) return { ok: false, error: "bad_pin" };
+      const who = await this.amAdmin(code);
+      if (!who.legacy && !who.owner) return { ok: false, error: "not_owner" };
+      if (who.legacy && s.pin !== pin) return { ok: false, error: "bad_pin" };
       const norm = (x) => String(x || "").trim().replace(/\s+/g, " ").toLowerCase();
       if (norm(name) !== norm(s.settings?.name)) return { ok: false, error: "name_mismatch" };
       store.del(key(code));
@@ -466,7 +493,9 @@ function makeDemoApi() {
     async saveSettings(code, pin, settings, newPin) {
       const s = load(code);
       if (!s) return { ok: false, error: "not_found" };
-      if (s.pin !== pin) return { ok: false, error: "bad_pin" };
+      const who = await this.amAdmin(code);
+      if (!who.legacy && !who.admin) return { ok: false, error: demoUser() ? "not_admin" : "signed_out" };
+      if (who.legacy && s.pin !== pin) return { ok: false, error: "bad_pin" };
       if (newPin) { if (!/^\d{4,8}$/.test(newPin)) return { ok: false, error: "pin_format" }; s.pin = newPin; }
       s.settings = settings;
       save(code, s);
@@ -516,6 +545,10 @@ async function makeSupabaseApi() {
     },
     async signOut() { await sb.auth.signOut(); },
     mySchools: () => rpc("bus_my_schools", {}),
+    amAdmin: (code) => rpc("bus_am_admin", { p_code: code }),
+    listAdmins: (code) => rpc("bus_list_admins", { p_code: code }),
+    addAdmin: (code, email) => rpc("bus_add_admin", { p_code: code, p_email: email }),
+    removeAdmin: (code, email) => rpc("bus_remove_admin", { p_code: code, p_email: email }),
     schoolAccess: (code) => rpc("bus_school_access", { p_code: code }),
     // Stripe: returns { ok, url } to send the owner to checkout or the billing portal.
     async billing(action, code) {
@@ -555,6 +588,10 @@ const ERRORS = {
   network: "Couldn't reach the server. Check the internet connection and try again.",
   settings_invalid: "Those settings couldn't be saved.",
   signed_out: "Please sign in to your account first.",
+  not_admin: "Only school admins can change Settings. Sign in with an admin email.",
+  not_owner: "Only the school's owner can do that.",
+  email_invalid: "That doesn't look like an email address.",
+  admin_limit: "A school can have up to 10 admins.",
   too_many_emails: "Too many sign-in emails were sent. Wait a few minutes and try again.",
   email_failed: "We couldn't send the sign-in email. Check the address and try again.",
   subscription_needed: "This school's free trial has ended. Subscribe to keep calling buses.",
@@ -840,7 +877,7 @@ function renderHome() {
     const el = document.getElementById("account-line");
     if (el && u) { el.innerHTML = `Signed in as <b>${esc(u.email)}</b> · <a href="/account">My school</a>`; wireAcct(); }
     if (u) api.mySchools().then((r) => {
-      if (r?.ok && r.schools.length >= (r.limit ?? SCHOOL_LIMIT)) document.getElementById("setup-card")?.remove();
+      if (r?.ok && r.schools.length) document.getElementById("setup-card")?.remove();
     }).catch(() => {});
   });
 }
@@ -875,7 +912,7 @@ async function startSetup() {
 // Check the limit before someone fills out the whole setup form.
 async function roomForSchool() {
   const r = await api.mySchools().catch(() => null);
-  if (r?.ok && r.schools.length >= (r.limit ?? SCHOOL_LIMIT)) { toast(ERRORS.school_limit); return false; }
+  if (r?.ok && (r.owned ?? r.schools.length) >= (r.limit ?? SCHOOL_LIMIT)) { toast(ERRORS.school_limit); return false; }
   return true;
 }
 
@@ -889,7 +926,7 @@ function renderAccount(next) {
   if (paidCode) {
     history.replaceState({}, "", "/account");
     setTimeout(() => toast("🎉 Thank you! Your subscription is active."), 400);
-    setTimeout(() => { if (!unsub) loadSchools(); }, 4000); // Stripe's confirmation can take a few seconds
+    setTimeout(() => { if (!unsub && shown) api.getUser().then((u) => u && !unsub && drawSignedIn(u)); }, 4000); // Stripe's confirmation can take a few seconds
   }
   cleanup = () => { unsub = true; };
   // Redraw only when signing in/out actually changes who's signed in (e.g. the link was opened in another tab).
@@ -940,43 +977,169 @@ function renderAccount(next) {
   }
 
   async function drawSignedIn(u) {
-    $app.innerHTML = `${demoBanner()}
-      <div class="page account">
-        ${headBlock({ pill: "Your account", title: "My school", sub: `Signed in as ${esc(u.email)}`, right: `<div class="head-bus">${busSVG("#ffd23f")}</div>` })}
-        <section class="card step s1">
-          <div class="row wrap between"><h2>Your school</h2><button class="btn primary" id="acct-create">+ Create a school</button></div>
-          <div id="my-schools"><p class="muted">Loading…</p></div>
-        </section>
-        <div class="row center"><button class="btn" id="acct-signout">Sign out</button></div>
-        <footer class="app-foot">© 2026 STEMstarters LLC · <a href="https://dismissalmagic.com/privacy">Privacy Policy</a> · <a href="https://dismissalmagic.com/terms">Terms of Service</a></footer>
-      </div>`;
-    document.getElementById("acct-create").onclick = async () => { if (await roomForSchool()) renderSetup(); };
-    document.getElementById("acct-signout").onclick = async () => { await api.signOut(); go("/"); };
-    loadSchools();
+    $app.innerHTML = `${demoBanner()}<div class="page account"><p class="muted center" style="padding:60px 0">Loading your school…</p></div>`;
+    const r = await api.mySchools().catch(() => null);
+    if (!r?.ok) {
+      $app.innerHTML = `${demoBanner()}<div class="page account"><section class="card step s1"><p class="err">${esc(ERRORS[r?.error] || ERRORS.network)}</p></section>${acctFoot()}</div>`;
+      wireFoot(); return;
+    }
+    r.schools.forEach((x) => rememberSchool(x.code, x.name));
+    if (r.schools.length === 1) return drawOne(u, r.schools[0]);
+    return drawMany(u, r);
   }
 
-  async function loadSchools() {
-    const box = document.getElementById("my-schools");
-    if (!box) return;
-    const r = await api.mySchools();
-    if (!r?.ok) { box.innerHTML = `<p class="err">${esc(ERRORS[r?.error] || ERRORS.network)}</p>`; return; }
-    const createBtn = document.getElementById("acct-create");
-    if (createBtn) createBtn.hidden = r.schools.length >= (r.limit ?? SCHOOL_LIMIT); // one school per account
-    if (!r.schools.length) { box.innerHTML = `<p class="muted">No school yet. Create yours to get started!</p>`; return; }
-    r.schools.forEach((x) => rememberSchool(x.code, x.name));
-    box.innerHTML = `<div class="recent-list">${r.schools.map((x) => `
-      <div class="recent-row">
-        <div class="recent-name"><b>${esc(x.name || "School")}</b><span class="recent-code">${esc(x.code)}</span>${accessBadge(x.access)}</div>
-        <div class="row">
-          <a class="btn small" href="/${esc(x.code)}" target="_blank" rel="noopener" title="Opens in a new tab">Classroom screen ↗</a>
-          <a class="btn small primary" href="/${esc(x.code)}/admin">School Dashboard</a>
-          ${x.access?.reason === "paid" ? `<button class="btn small" data-bill="portal" data-code="${esc(x.code)}">Manage billing</button>`
-            : x.access && x.access.reason !== "comped" ? `<button class="btn small subscribe" data-bill="checkout" data-code="${esc(x.code)}">Subscribe</button>` : ""}
-        </div>
-      </div>`).join("")}</div>`;
-    box.querySelectorAll("[data-bill]").forEach((b) => (b.onclick = () => goBilling(b.dataset.bill, b.dataset.code, b)));
-    box.querySelectorAll("a:not([target])").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
+  const acctFoot = () => `<div class="row center"><button class="btn" id="acct-signout">Sign out</button></div>
+    <footer class="app-foot">© 2026 STEMstarters LLC · <a href="https://dismissalmagic.com/privacy">Privacy Policy</a> · <a href="https://dismissalmagic.com/terms">Terms of Service</a></footer>`;
+  function wireFoot() { document.getElementById("acct-signout").onclick = async () => { await api.signOut(); go("/"); }; }
+  const billBtn = (x) => x.role === "admin" ? "" : x.access?.reason === "paid" ? `<button class="btn small" data-bill="portal" data-code="${esc(x.code)}">Manage billing</button>`
+    : x.access && x.access.reason !== "comped" ? `<button class="btn small subscribe" data-bill="checkout" data-code="${esc(x.code)}">Subscribe</button>` : "";
+  function wireCommon(root) {
+    root.querySelectorAll("[data-bill]").forEach((b) => (b.onclick = () => goBilling(b.dataset.bill, b.dataset.code, b)));
+    root.querySelectorAll("a[data-go]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
+    root.querySelectorAll("[data-settings]").forEach((b) => (b.onclick = async () => {
+      const code = b.dataset.settings, role = b.dataset.role;
+      b.disabled = true;
+      let sc = null; try { sc = await api.getSchool(code); } catch {}
+      b.disabled = false;
+      if (!sc) return toast(ERRORS.network);
+      openSettings(code, sc, { canDelete: role === "owner", onDone: () => { go("/account"); toast("Settings saved."); }, onCancel: () => go("/account") });
+    }));
+    root.querySelectorAll("[data-admins]").forEach((b) => (b.onclick = () => {
+      openModal(`<h2>School admins</h2><p class="muted">${esc(b.dataset.name)}</p><div id="adm-box"></div><div class="row"><button class="btn" data-close>Done</button></div>`);
+      adminManager(document.getElementById("adm-box"), b.dataset.admins);
+    }));
   }
+
+  // One school: the page IS that school.
+  function drawOne(u, x) {
+    const owner = x.role !== "admin";
+    $app.innerHTML = `${demoBanner()}
+      <div class="page account">
+        ${headBlock({ pill: owner ? "Your school" : "School admin", title: esc(x.name || "Your school"), sub: `Signed in as ${esc(u.email)}`, right: `<div class="head-bus">${busSVG("#ffd23f")}</div>` })}
+        <section class="card step s1 school-hero">
+          <div class="hero-code"><span class="muted small">School code</span><div class="big-code">${esc(x.code)}</div>${accessBadge(owner ? x.access : null)}</div>
+          <div class="hero-actions">
+            <a class="btn big primary" href="/${esc(x.code)}/admin" data-go>🚌 School Dashboard</a>
+            <a class="btn big" href="/${esc(x.code)}" target="_blank" rel="noopener">📺 Classroom screen ↗</a>
+            <button class="btn big" data-settings="${esc(x.code)}" data-role="${owner ? "owner" : "admin"}">⚙️ Settings</button>
+            ${billBtn(x).replace("btn small", "btn big")}
+          </div>
+        </section>
+        <section class="card step s2">
+          <h2>${chip(1)} Share links</h2>
+          ${shareBlock(x.code)}
+          <p class="muted small">Teachers only need the classroom link. Staff who help with dismissal need the School Dashboard link <b>and</b> the PIN.</p>
+        </section>
+        ${owner ? `<section class="card step s3">
+          <h2>${chip(2)} School admins</h2>
+          <p class="muted">Admins sign in with their email and can change Settings (buses, colors, the PIN). Staff with only the PIN can run dismissal but can't change anything.</p>
+          <div id="adm-box"></div>
+        </section>` : ""}
+        <section class="card roles-card">
+          <h2>Who can do what</h2>
+          <ul class="roles">
+            <li><b>School admin</b> (signs in with email): everything, including Settings and the PIN.</li>
+            <li><b>Dashboard</b> (school code + PIN): marks buses and calls groups.</li>
+            <li><b>Classroom screen</b> (school code): watches for calls. Can't change anything.</li>
+          </ul>
+        </section>
+        ${acctFoot()}
+      </div>`;
+    wireCopy($app); wireCommon($app); wireFoot();
+    if (owner) adminManager(document.getElementById("adm-box"), x.code);
+  }
+
+  // More than one school (districts, or someone helping several schools).
+  function drawMany(u, r) {
+    const canCreate = (r.owned ?? 0) < (r.limit ?? SCHOOL_LIMIT);
+    $app.innerHTML = `${demoBanner()}
+      <div class="page account">
+        ${headBlock({ pill: r.schools.length > 1 ? "District dashboard" : "Your account", title: r.schools.length ? "Your schools" : "Welcome!", sub: `Signed in as ${esc(u.email)}`, right: `<div class="head-bus">${busSVG("#ffd23f")}</div>` })}
+        <section class="card step s1">
+          <div class="row wrap between"><h2>${r.schools.length ? `${r.schools.length} schools` : "Set up your school"}</h2>${canCreate ? `<button class="btn primary" id="acct-create">+ Create a school</button>` : ""}</div>
+          ${r.schools.length ? `<div class="recent-list">${r.schools.map((x) => `
+            <div class="recent-row">
+              <div class="recent-name"><b>${esc(x.name || "School")}</b><span class="recent-code">${esc(x.code)}</span>${x.role === "admin" ? `<span class="access-badge">Admin</span>` : accessBadge(x.access)}</div>
+              <div class="row">
+                <a class="btn small primary" href="/${esc(x.code)}/admin" data-go>School Dashboard</a>
+                <a class="btn small" href="/${esc(x.code)}" target="_blank" rel="noopener">Classroom ↗</a>
+                <button class="btn small" data-settings="${esc(x.code)}" data-role="${esc(x.role || "owner")}">Settings</button>
+                ${x.role !== "admin" ? `<button class="btn small" data-admins="${esc(x.code)}" data-name="${esc(x.name || "")}">Admins</button>` : ""}
+                ${billBtn(x)}
+              </div>
+            </div>`).join("")}</div>` : `<p class="muted">Pick your buses, how you call grades, and your colors. You'll get a school code and links to share.</p>`}
+        </section>
+        ${acctFoot()}
+      </div>`;
+    wireCommon($app); wireFoot();
+    const c = document.getElementById("acct-create");
+    if (c) c.onclick = async () => { if (await roomForSchool()) renderSetup(); };
+  }
+}
+
+// Owner-only list of admin emails for one school.
+async function adminManager(box, code) {
+  if (!box) return;
+  const draw = async () => {
+    box.innerHTML = `<p class="muted">Loading…</p>`;
+    const r = await api.listAdmins(code).catch(() => null);
+    if (!r?.ok) { box.innerHTML = `<p class="err">${esc(ERRORS[r?.error] || ERRORS.network)}</p>`; return; }
+    box.innerHTML = `
+      <ul class="admin-list">${r.admins.length ? r.admins.map((a) => `<li><span>${esc(a.email)}</span><button class="icon-btn" data-rm="${esc(a.email)}" aria-label="Remove ${esc(a.email)}"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button></li>`).join("") : `<li class="muted">No other admins yet. You're the only one.</li>`}</ul>
+      <form class="admin-add row nowrap"><input type="email" placeholder="name@school.org" required aria-label="Admin email" /><button class="btn small primary" type="submit">Add admin</button></form>
+      <p class="err" data-aerr></p>`;
+    box.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = async () => {
+      const x = await api.removeAdmin(code, b.dataset.rm);
+      toast(x?.ok ? `Removed ${b.dataset.rm}.` : ERRORS[x?.error] || ERRORS.network); draw();
+    }));
+    box.querySelector("form").onsubmit = async (e) => {
+      e.preventDefault();
+      const inp = box.querySelector("input"), err = box.querySelector("[data-aerr]");
+      const x = await api.addAdmin(code, inp.value);
+      if (!x?.ok) { err.textContent = ERRORS[x?.error] || ERRORS.network; return; }
+      toast(`${inp.value.trim()} can now sign in as an admin.`); draw();
+    };
+  };
+  draw();
+}
+
+function openSettings(code, school, { pin = null, onDone, onCancel, canDelete = true }) {
+  $app.innerHTML = `${demoBanner()}<div class="page">${headBlock({ pill: "School admin", title: "Settings", sub: esc(school.settings.name), right: `<div class="head-bus">${busSVG(school.settings.buses[0]?.color || "#ffd23f")}</div>` })}<div id="editor"></div></div>`;
+  function deleteFlow(name) {
+    openModal(`<h2>Delete ${esc(name)}?</h2>
+      <p>This permanently deletes the school, its buses, settings and PIN. Classroom screens will stop working. <b>This can't be undone.</b></p>
+      <label>Type the school name to confirm<input id="del-name" autocomplete="off" placeholder="${esc(name)}" /></label>
+      <p class="err" id="del-err"></p>
+      <div class="row"><button class="btn danger" id="del-go" disabled>Delete forever</button><button class="btn" data-close>Cancel</button></div>`);
+    const inp = document.getElementById("del-name"), goBtn = document.getElementById("del-go");
+    const norm = (x) => String(x || "").trim().replace(/\s+/g, " ").toLowerCase();
+    inp.oninput = () => (goBtn.disabled = norm(inp.value) !== norm(name));
+    inp.focus();
+    goBtn.onclick = async () => {
+      goBtn.disabled = true;
+      const r = await api.deleteSchool(code, pin, inp.value);
+      if (!r?.ok) { document.getElementById("del-err").textContent = r?.error === "name_mismatch" ? "The name didn't match." : (ERRORS[r?.error] || ERRORS.network); goBtn.disabled = false; return; }
+      ["buspin:", "busgroup:", "busvideo:"].forEach((k) => { store.del(k + code); sess.del(k + code); });
+      forgetSchool(code);
+      api.notify(code);
+      closeModal();
+      go("/");
+      toast("School deleted.");
+    };
+  }
+  settingsEditor(document.getElementById("editor"), school.settings, {
+    mode: "edit",
+    onCancel,
+    onDelete: canDelete ? deleteFlow : null,
+    async onSubmit(settings, newPin) {
+      const r = await api.saveSettings(code, pin, settings, newPin);
+      if (!r?.ok) return ERRORS[r?.error] || ERRORS.network;
+      let p = pin;
+      if (newPin) { p = newPin; sess.set("buspin:" + code, p); if (store.get("buspin:" + code)) store.set("buspin:" + code, p); }
+      api.notify(code);
+      onDone(p);
+    },
+  });
 }
 
 /* =========================== SETTINGS EDITOR =========================== */
@@ -1373,43 +1536,13 @@ function adminPanel(code, pin) {
       wireCopy($modal);
     };
     document.getElementById("a-reset").onclick = () => confirmModal("Clear all of today's arrivals and calls?", "Reset", () => act({ type: "reset" }));
-    document.getElementById("a-settings").onclick = () => {
+    const setBtn = document.getElementById("a-settings");
+    setBtn.hidden = true; // admins only
+    let who = {};
+    (api.amAdmin ? api.amAdmin(code) : Promise.resolve({ admin: true })).then((w) => { who = w || {}; if (who.admin || who.legacy || !who.ok) setBtn.hidden = false; // !ok: database not updated yet, keep old behavior }).catch(() => {});
+    setBtn.onclick = () => {
       feed.stop();
-      $app.innerHTML = `${demoBanner()}<div class="page">${headBlock({ pill: "School Dashboard", title: "Settings", sub: esc(school.settings.name), right: `<div class="head-bus">${busSVG(school.settings.buses[0]?.color || "#ffd23f")}</div>` })}<div id="editor"></div></div>`;
-      settingsEditor(document.getElementById("editor"), school.settings, {
-        mode: "edit",
-        onCancel: () => adminPanel(code, pin),
-        onDelete(name) {
-          openModal(`<h2>Delete ${esc(name)}?</h2>
-            <p>This permanently deletes the school, its buses, settings and PIN. Classroom screens will stop working. <b>This can't be undone.</b></p>
-            <label>Type the school name to confirm<input id="del-name" autocomplete="off" placeholder="${esc(name)}" /></label>
-            <p class="err" id="del-err"></p>
-            <div class="row"><button class="btn danger" id="del-go" disabled>Delete forever</button><button class="btn" data-close>Cancel</button></div>`);
-          const inp = document.getElementById("del-name"), goBtn = document.getElementById("del-go");
-          const norm = (x) => String(x || "").trim().replace(/\s+/g, " ").toLowerCase();
-          inp.oninput = () => (goBtn.disabled = norm(inp.value) !== norm(name));
-          inp.focus();
-          goBtn.onclick = async () => {
-            goBtn.disabled = true;
-            const r = await api.deleteSchool(code, pin, inp.value);
-            if (!r?.ok) { document.getElementById("del-err").textContent = r?.error === "name_mismatch" ? "The name didn't match." : (ERRORS[r?.error] || ERRORS.network); goBtn.disabled = false; return; }
-            ["buspin:", "busgroup:", "busvideo:"].forEach((k) => { store.del(k + code); sess.del(k + code); });
-            forgetSchool(code);
-            api.notify(code);
-            closeModal();
-            go("/");
-            toast("School deleted.");
-          };
-        },
-        async onSubmit(settings, newPin) {
-          const r = await api.saveSettings(code, pin, settings, newPin);
-          if (!r?.ok) return ERRORS[r?.error] || ERRORS.network;
-          let p = pin;
-          if (newPin) { p = newPin; sess.set("buspin:" + code, p); if (store.get("buspin:" + code)) store.set("buspin:" + code, p); }
-          api.notify(code);
-          adminPanel(code, p);
-        },
-      });
+      openSettings(code, school, { pin, canDelete: !!(who.owner || who.legacy), onDone: (p) => adminPanel(code, p || pin), onCancel: () => adminPanel(code, pin) });
     };
   }
 
