@@ -11,7 +11,7 @@ const $app = document.getElementById("app");
 const $modal = document.getElementById("modal-root");
 const DEMO = !CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey;
 const GO_NOW_MS = 5 * 60 * 1000; // how long a call shows as "GO NOW"
-const SCHOOL_LIMIT = 3; // schools per account (the database enforces this; see supabase/02-school-limit.sql)
+const SCHOOL_LIMIT = 1; // schools per account by default (the database enforces each account's own limit; see supabase/05-one-school-per-account.sql)
 
 /* ---------------------------- small helpers ---------------------------- */
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -553,7 +553,7 @@ const ERRORS = {
   no_billing: "There's no billing set up for this school yet.",
   billing_failed: "We couldn't open billing right now. Please try again in a minute.",
   demo_billing: "Billing isn't available in demo mode.",
-  school_limit: `Each account can have up to ${SCHOOL_LIMIT} schools for now. Need more? Email hello@dismissalmagic.com.`,
+  school_limit: "Each account is for one school. To set up another school, sign in with a different email (like that school's office email). Managing several schools? Email hello@dismissalmagic.com.",
 };
 
 /* ------------------------------- live feed ----------------------------- */
@@ -817,7 +817,7 @@ async function startSetup() {
 // Check the limit before someone fills out the whole setup form.
 async function roomForSchool() {
   const r = await api.mySchools().catch(() => null);
-  if (r?.ok && r.schools.length >= SCHOOL_LIMIT) { toast(ERRORS.school_limit); return false; }
+  if (r?.ok && r.schools.length >= (r.limit ?? SCHOOL_LIMIT)) { toast(ERRORS.school_limit); return false; }
   return true;
 }
 
@@ -903,6 +903,8 @@ function renderAccount(next) {
     if (!box) return;
     const r = await api.mySchools();
     if (!r?.ok) { box.innerHTML = `<p class="err">${esc(ERRORS[r?.error] || ERRORS.network)}</p>`; return; }
+    const createBtn = document.getElementById("acct-create");
+    if (createBtn) createBtn.hidden = r.schools.length >= (r.limit ?? SCHOOL_LIMIT); // one school per account
     if (!r.schools.length) { box.innerHTML = `<p class="muted">No schools yet. Create your first one!</p>`; return; }
     r.schools.forEach((x) => rememberSchool(x.code, x.name));
     box.innerHTML = `<div class="recent-list">${r.schools.map((x) => `
@@ -1916,7 +1918,7 @@ function toast(msg) {
   t.className = "toast";
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(() => t.remove(), Math.max(3500, msg.length * 55)); // longer messages stay up longer
 }
 
 boot();
