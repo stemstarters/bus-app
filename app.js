@@ -302,6 +302,15 @@ function makeDemoApi() {
       }
       return out.length ? { ok: true, schools: out } : { ok: false, error: "no_match" };
     },
+    async deleteSchool(code, pin, name) {
+      const s = load(code);
+      if (!s) return { ok: false, error: "not_found" };
+      if (s.pin !== pin) return { ok: false, error: "bad_pin" };
+      const norm = (x) => String(x || "").trim().replace(/\s+/g, " ").toLowerCase();
+      if (norm(name) !== norm(s.settings?.name)) return { ok: false, error: "name_mismatch" };
+      store.del(key(code));
+      return { ok: true };
+    },
     async schoolStats(code) {
       const days = [];
       for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith("busdemo-stats:" + code + ":")) days.push(k.split(":")[2]); }
@@ -391,6 +400,7 @@ async function makeSupabaseApi() {
     findSchool: (name, pin) => rpc("bus_find_school", { p_name: name, p_pin: pin }),
     ownerStats: (key, days) => rpc("bus_owner_stats", { p_key: key, p_days: days }),
     schoolStats: (code) => rpc("bus_school_stats", { p_code: code }),
+    deleteSchool: (code, pin, name) => rpc("bus_delete_school", { p_code: code, p_pin: pin, p_confirm_name: name }),
     saveState: (code, pin, state, expected) => rpc("bus_save_state", { p_code: code, p_pin: pin, p_state: state, p_expected_version: expected }),
     saveSettings: (code, pin, settings, newPin) => rpc("bus_save_settings", { p_code: code, p_pin: pin, p_settings: settings, p_new_pin: newPin || null }),
     subscribe(code, fn) {
@@ -637,7 +647,7 @@ function renderHome() {
 
 /* =========================== SETTINGS EDITOR =========================== */
 // Used both for "Create a school" and for editing from the master panel.
-function settingsEditor(container, initial, { mode, onSubmit, onCancel }) {
+function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete }) {
   const st = clone(initial);
   function render() {
     applyTheme(st.theme);
@@ -724,6 +734,11 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel }) {
           </div>
         </section>
 
+        ${mode === "edit" && onDelete ? `<section class="card danger-zone wide">
+          <h2>Delete this school</h2>
+          <p class="muted">Permanently removes this school's name, buses, settings and PIN. Classroom links and the master panel stop working right away. This can't be undone.</p>
+          <div><button type="button" class="btn danger" id="s-delete">Delete this school…</button></div>
+        </section>` : ""}
         <div class="settings-foot wide">
         <p class="err" id="s-err"></p>
         <div class="row center">
@@ -772,6 +787,7 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel }) {
     container.querySelectorAll("[data-theme]").forEach((el) => (el.onclick = rerender(() => (st.theme = { ...THEMES[el.dataset.theme] }))));
     ["#t-primary", "#t-accent", "#t-bg"].forEach((s) => (q(s).oninput = () => { readInputs(); applyTheme(st.theme); }));
     q("#s-cancel").onclick = onCancel;
+    if (q("#s-delete")) q("#s-delete").onclick = () => onDelete(initial.name);
     q("#s-test").onclick = () => { unlockAudio(); playSound(q("#s-sound").value); };
     q("#settings-form").onsubmit = async (e) => {
       e.preventDefault();
@@ -964,6 +980,28 @@ function adminPanel(code, pin) {
       settingsEditor(document.getElementById("editor"), school.settings, {
         mode: "edit",
         onCancel: () => adminPanel(code, pin),
+        onDelete(name) {
+          openModal(`<h2>Delete ${esc(name)}?</h2>
+            <p>This permanently deletes the school, its buses, settings and PIN. Classroom screens will stop working. <b>This can't be undone.</b></p>
+            <label>Type the school name to confirm<input id="del-name" autocomplete="off" placeholder="${esc(name)}" /></label>
+            <p class="err" id="del-err"></p>
+            <div class="row"><button class="btn danger" id="del-go" disabled>Delete forever</button><button class="btn" data-close>Cancel</button></div>`);
+          const inp = document.getElementById("del-name"), goBtn = document.getElementById("del-go");
+          const norm = (x) => String(x || "").trim().replace(/\s+/g, " ").toLowerCase();
+          inp.oninput = () => (goBtn.disabled = norm(inp.value) !== norm(name));
+          inp.focus();
+          goBtn.onclick = async () => {
+            goBtn.disabled = true;
+            const r = await api.deleteSchool(code, pin, inp.value);
+            if (!r?.ok) { document.getElementById("del-err").textContent = r?.error === "name_mismatch" ? "The name didn't match." : (ERRORS[r?.error] || ERRORS.network); goBtn.disabled = false; return; }
+            ["buspin:", "busgroup:", "busvideo:"].forEach((k) => { store.del(k + code); sess.del(k + code); });
+            forgetSchool(code);
+            api.notify(code);
+            closeModal();
+            go("/");
+            toast("School deleted.");
+          };
+        },
         async onSubmit(settings, newPin) {
           const r = await api.saveSettings(code, pin, settings, newPin);
           if (!r?.ok) return ERRORS[r?.error] || ERRORS.network;

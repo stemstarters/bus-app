@@ -441,3 +441,5 @@ table.data .mono { font: 800 1rem var(--head); letter-spacing: .12em; color: #13
 .magic-strip:empty { display: none; }
 .magic-num { font: 800 2.4rem/1 var(--head); color: var(--primary); }
 .magic-txt { font: 800 1.4rem/1.1 var(--head); color: #3A0F65; }
+.card.danger-zone { border-color: #f3b4bd; background: #fff8f9; }
+.card.danger-zone h2 { color: #b3001b; }
