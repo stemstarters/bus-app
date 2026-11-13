@@ -454,3 +454,13 @@ table.data .mono { font: 800 1rem var(--head); letter-spacing: .12em; color: #13
 /* vans & walkers */
 .bus-card .bus-name { overflow-wrap: break-word; }
 .bus-card .bus-name.long { font-size: 1.05em; line-height: 1.15; }
+
+/* ---------- accounts ---------- */
+.code-input.email-input { font: 600 1.25rem var(--body, inherit); letter-spacing: normal; text-transform: none; }
+.account-line { margin-top: 12px; }
+.account-line a { color: var(--primary); font-weight: 600; }
+.page.account .card { margin-top: 24px; }
+.page.account .card h2 { margin: 0; }
+.row.between { justify-content: space-between; align-items: center; }
+.page.account #my-schools { margin-top: 14px; }
+.page.account > .row.center { margin-top: 24px; }
