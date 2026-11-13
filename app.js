@@ -613,6 +613,7 @@ function renderHome() {
         <p class="err" id="find-err"></p>
         <div id="find-result"></div>
       </section>
+      <footer class="app-foot">© 2026 STEMstarters LLC · <a href="https://dismissalmagic.com/privacy">Privacy Policy</a> · <a href="https://dismissalmagic.com/terms">Terms of Service</a></footer>
     </div>`;
   document.querySelectorAll("[data-forget]").forEach((b) => (b.onclick = () => { forgetSchool(b.dataset.forget); renderHome(); }));
   document.querySelectorAll(".recent-row a").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));

@@ -443,3 +443,6 @@ table.data .mono { font: 800 1rem var(--head); letter-spacing: .12em; color: #13
 .magic-txt { font: 800 1.4rem/1.1 var(--head); color: #3A0F65; }
 .card.danger-zone { border-color: #f3b4bd; background: #fff8f9; }
 .card.danger-zone h2 { color: #b3001b; }
+
+.app-foot { text-align: center; color: var(--muted); font-size: .9rem; margin-top: 30px; }
+.app-foot a { color: var(--primary); }
