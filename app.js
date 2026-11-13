@@ -201,47 +201,45 @@ function busSVG(color, cls = "") {
 
 /* ------------------------ vans, walkers, helpers ----------------------- */
 function vanSVG(color, cls = "") {
-  const dark = luminance(color) < 0.3, ink = "#2b2d42", glass = "#dff3ff";
+  const dark = luminance(color) < 0.3, ink = "#2b2d42", glass = "#dff3ff", hub = dark ? "#bbb" : "#e9ecef";
   return `<svg class="bus-svg van-svg ${cls}" viewBox="0 0 220 128" aria-hidden="true">
-    <ellipse cx="114" cy="120" rx="90" ry="6" fill="rgba(0,0,0,.12)"/>
-    <path d="M26 102 V48 Q26 26 48 26 H146 Q160 26 170 38 L196 64 Q210 68 210 82 V102 Z" fill="${color}" stroke="${ink}" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="38" y="36" width="30" height="24" rx="6" fill="${glass}" stroke="${ink}" stroke-width="3"/>
-    <rect x="76" y="36" width="30" height="24" rx="6" fill="${glass}" stroke="${ink}" stroke-width="3"/>
-    <rect x="114" y="36" width="28" height="24" rx="6" fill="${glass}" stroke="${ink}" stroke-width="3"/>
-    <path d="M150 36 H160 Q164 36 167 40 L186 62 H150 Z" fill="${glass}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
-    <line x1="110" y1="36" x2="110" y2="96" stroke="${ink}" stroke-width="2.5"/>
-    <rect x="96" y="70" width="10" height="4" rx="2" fill="${ink}"/>
-    <rect x="28" y="74" width="168" height="5" fill="rgba(0,0,0,.14)"/>
-    <circle cx="186" cy="76" r="4" fill="${ink}"/><circle cx="198" cy="76" r="4" fill="${ink}"/>
-    <circle cx="187.3" cy="74.6" r="1.4" fill="#fff"/><circle cx="199.3" cy="74.6" r="1.4" fill="#fff"/>
-    <circle cx="181" cy="86" r="3.2" fill="#ff8fab" opacity=".85"/><circle cx="203" cy="86" r="3.2" fill="#ff8fab" opacity=".85"/>
-    <path d="M187 85 Q192 90.5 197 85" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>
-    <circle cx="207" cy="94" r="3.5" fill="#fff3b0" stroke="${ink}" stroke-width="2"/>
-    <rect x="198" y="98" width="16" height="7" rx="3" fill="${ink}"/><rect x="18" y="98" width="14" height="7" rx="3" fill="${ink}"/>
-    <g class="wheel"><circle cx="62" cy="102" r="14" fill="${ink}"/><circle cx="62" cy="102" r="5.5" fill="${dark ? "#bbb" : "#e9ecef"}"/></g>
-    <g class="wheel"><circle cx="170" cy="102" r="14" fill="${ink}"/><circle cx="170" cy="102" r="5.5" fill="${dark ? "#bbb" : "#e9ecef"}"/></g>
+    <ellipse cx="114" cy="114" rx="64" ry="5" fill="rgba(0,0,0,.12)"/>
+    <path d="M56 104 V64 Q56 50 70 50 H134 Q146 50 153 60 L162 74 Q176 76 176 90 V104 Z" fill="${color}" stroke="${ink}" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="65" y="58" width="22" height="18" rx="5" fill="${glass}" stroke="${ink}" stroke-width="3"/>
+    <rect x="93" y="58" width="22" height="18" rx="5" fill="${glass}" stroke="${ink}" stroke-width="3"/>
+    <path d="M121 58 H136 Q141 58 144 62 L154 76 H121 Z" fill="${glass}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="58" y="84" width="100" height="5" fill="rgba(255,255,255,.55)"/>
+    <circle cx="156" cy="85" r="3.4" fill="${ink}"/><circle cx="166" cy="85" r="3.4" fill="${ink}"/>
+    <circle cx="157.2" cy="83.8" r="1.2" fill="#fff"/><circle cx="167.2" cy="83.8" r="1.2" fill="#fff"/>
+    <path d="M157 92 Q161 96 165 92" fill="none" stroke="${ink}" stroke-width="2.3" stroke-linecap="round"/>
+    <circle cx="152" cy="93" r="2.6" fill="#ff8fab"/><circle cx="170" cy="93" r="2.4" fill="#ff8fab"/>
+    <g class="wheel"><circle cx="78" cy="104" r="12" fill="${ink}"/><circle cx="78" cy="104" r="5" fill="${hub}"/></g>
+    <g class="wheel"><circle cx="138" cy="104" r="12" fill="${ink}"/><circle cx="138" cy="104" r="5" fill="${hub}"/></g>
   </svg>`;
 }
+function mixWhite(hex, amt) {
+  const n = parseInt(String(hex).replace("#", "").padEnd(6, "0").slice(0, 6), 16);
+  const ch = (v) => Math.round(v + (255 - v) * amt).toString(16).padStart(2, "0");
+  return "#" + ch((n >> 16) & 255) + ch((n >> 8) & 255) + ch(n & 255);
+}
 function walkersSVG(color, cls = "") {
-  const ink = "#2b2d42";
-  const kid = (x, s, skin, hair, step) => {
-    const k = (v) => v * s;
-    return `<g transform="translate(${x} ${128 - k(118)})">
-      <rect x="${k(10)}" y="${k(44)}" width="${k(20)}" height="${k(30)}" rx="${k(7)}" fill="#ffd23f" stroke="${ink}" stroke-width="3"/>
-      <line x1="${k(30)}" y1="${k(80)}" x2="${k(30 - step)}" y2="${k(112)}" stroke="${ink}" stroke-width="${k(7)}" stroke-linecap="round"/>
-      <line x1="${k(42)}" y1="${k(80)}" x2="${k(42 + step)}" y2="${k(112)}" stroke="${ink}" stroke-width="${k(7)}" stroke-linecap="round"/>
-      <rect x="${k(22)}" y="${k(40)}" width="${k(30)}" height="${k(44)}" rx="${k(11)}" fill="${color}" stroke="${ink}" stroke-width="3"/>
-      <line x1="${k(48)}" y1="${k(50)}" x2="${k(60)}" y2="${k(72)}" stroke="${ink}" stroke-width="${k(6)}" stroke-linecap="round"/>
-      <circle cx="${k(37)}" cy="${k(24)}" r="${k(16)}" fill="${skin}" stroke="${ink}" stroke-width="3"/>
-      <path d="M${k(21)} ${k(22)} Q${k(24)} ${k(6)} ${k(39)} ${k(8)} Q${k(53)} ${k(9)} ${k(53)} ${k(22)} Q${k(45)} ${k(14)} ${k(32)} ${k(17)} Z" fill="${hair}"/>
-      <circle cx="${k(42)}" cy="${k(24)}" r="${k(2.3)}" fill="${ink}"/><circle cx="${k(49)}" cy="${k(24)}" r="${k(2.3)}" fill="${ink}"/>
-      <path d="M${k(41)} ${k(31)} Q${k(45)} ${k(35)} ${k(49)} ${k(31)}" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round"/>
-    </g>`;
-  };
+  const ink = "#2b2d42", pocket = mixWhite(color, 0.45);
   return `<svg class="bus-svg walk-svg ${cls}" viewBox="0 0 220 128" aria-hidden="true">
-    <ellipse cx="110" cy="122" rx="78" ry="5" fill="rgba(0,0,0,.12)"/>
-    ${kid(52, 1, "#f1c27d", "#6b3e26", 8)}
-    ${kid(118, 0.86, "#8d5524", "#2b2d42", -6)}
+    <ellipse cx="110" cy="120" rx="34" ry="4" fill="rgba(0,0,0,.12)"/>
+    <g class="walk-legs">
+      <line x1="98" y1="98" x2="94" y2="112" stroke="${ink}" stroke-width="7" stroke-linecap="round"/>
+      <line x1="122" y1="98" x2="128" y2="110" stroke="${ink}" stroke-width="7" stroke-linecap="round"/>
+      <ellipse cx="91" cy="114" rx="8" ry="5" fill="#fff" stroke="${ink}" stroke-width="2.5"/>
+      <ellipse cx="131" cy="112" rx="8" ry="5" fill="#fff" stroke="${ink}" stroke-width="2.5"/>
+    </g>
+    <path d="M98 30 Q98 14 110 14 Q122 14 122 30" fill="none" stroke="${ink}" stroke-width="5" stroke-linecap="round"/>
+    <rect x="80" y="26" width="60" height="76" rx="24" fill="${color}" stroke="${ink}" stroke-width="3.5"/>
+    <rect x="89" y="68" width="42" height="26" rx="11" fill="${pocket}" stroke="${ink}" stroke-width="3"/>
+    <line x1="96" y1="76" x2="124" y2="76" stroke="${ink}" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="100" cy="48" r="4" fill="${ink}"/><circle cx="120" cy="48" r="4" fill="${ink}"/>
+    <circle cx="101.4" cy="46.6" r="1.4" fill="#fff"/><circle cx="121.4" cy="46.6" r="1.4" fill="#fff"/>
+    <path d="M104 56 Q110 61 116 56" fill="none" stroke="${ink}" stroke-width="2.3" stroke-linecap="round"/>
+    <circle cx="92" cy="56" r="3.4" fill="#ff8fab"/><circle cx="128" cy="56" r="3.4" fill="#ff8fab"/>
   </svg>`;
 }
 const kindOf = (b) => b?.kind || "bus";
@@ -1140,7 +1138,7 @@ function adminPanel(code, pin) {
       const leftWord = walk ? "All out" : kind === "van" ? "Van left" : "Bus left";
       const showAsHere = walk || arrived;
       return `<div class="card bus-card kind-${kind} ${arrived ? "arrived" : ""} ${left ? "gone" : ""}">
-        <div class="bus-head">${vehicleSVG(b, left || !showAsHere ? "faded" : "parked")}<div><div class="bus-name">${esc(b.name)}</div><div class="muted small">${sub}</div></div></div>
+        <div class="bus-head">${vehicleSVG(b, left || !showAsHere ? "faded" : "parked")}<div><div class="bus-name ${b.name.length > 8 ? "long" : ""}">${esc(b.name)}</div><div class="muted small">${sub}</div></div></div>
         ${left
           ? `<button class="btn arrive-btn left-btn on" data-unleave="${b.id}">✓ ${walk ? "All walkers out" : "Left campus"}</button>`
           : walk
