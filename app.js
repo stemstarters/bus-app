@@ -9,7 +9,10 @@ import { CONFIG } from "./config.js";
 
 const $app = document.getElementById("app");
 const $modal = document.getElementById("modal-root");
-const DEMO = !CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey;
+// /demo = the public practice school: runs entirely in the visitor's browser, never touches the database.
+const DEMO_ROUTE = /^\/demo(\/|$)/i.test(location.pathname);
+const DEMO = !CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey || DEMO_ROUTE;
+const DEMO_CODE = "DEMO01";
 const GO_NOW_MS = 5 * 60 * 1000; // how long a call shows as "GO NOW"
 const SCHOOL_LIMIT = 1; // schools per account by default (the database enforces each account's own limit; see supabase/05-one-school-per-account.sql)
 
@@ -43,6 +46,7 @@ function route() {
   let code = params.get("s") || params.get("code");
   let admin = params.has("admin");
   const parts = decodeURIComponent(location.pathname).split("/").map((p) => p.trim()).filter(Boolean);
+  if (DEMO_ROUTE) return { demo: true, view: (parts[1] || "").toLowerCase() };
   if (!code && parts[0]) {
     const c = extractCode("/" + parts[0]);
     if (c) { code = c; admin = admin || /^admin$/i.test(parts[1] || ""); }
@@ -674,6 +678,7 @@ async function boot() {
   if (!api) api = DEMO ? makeDemoApi() : await makeSupabaseApi().catch((e) => { console.error(e); return null; });
   if (!api) { $app.innerHTML = `<div class="center-card card"><h2>Couldn't load</h2><p>Check your internet connection and refresh.</p></div>`; return; }
   const r = route();
+  if (r.demo) return renderDemo(r.view);
   if (r.account) return renderAccount(r.next);
   if (r.owner) return renderOwner();
   if (!r.code) return renderHome();
@@ -682,7 +687,55 @@ async function boot() {
 }
 
 function demoBanner() {
+  if (DEMO_ROUTE) return window.self !== window.top ? "" : `<div class="demo-banner">🎈 Practice school: only you can see this, and nothing here reaches a real classroom. <a href="/account?next=create" target="_top">Start your free month →</a></div>`;
   return DEMO ? `<div class="demo-banner">Demo mode — data stays in this browser only. Open a second tab to see live updates. Add your Supabase keys in <code>config.js</code> to go live.</div>` : "";
+}
+
+/* ================================ DEMO ================================= */
+// The practice school "Sunnyside Elementary". Lives in this browser only (localStorage).
+function seedDemo(force) {
+  const k = "busdemo:" + DEMO_CODE;
+  if (!force && store.get(k)) return;
+  const settings = defaultSettings();
+  settings.name = "Sunnyside Elementary";
+  settings.groups = [{ id: "g-k1", name: "K–1" }, { id: "g-23", name: "2–3" }, { id: "g-45", name: "4–5" }];
+  store.set(k, { settings, state: emptyState(0), pin: "0000", createdAt: Date.now() });
+  store.set("buspin:" + DEMO_CODE, "0000");
+  if (!store.get("busgroup:" + DEMO_CODE)) store.set("busgroup:" + DEMO_CODE, "g-k1");
+}
+
+function renderDemo(view) {
+  seedDemo(false);
+  if (view === "dashboard") return adminPanel(DEMO_CODE, "0000");
+  if (view === "classroom") return renderDisplay(DEMO_CODE);
+
+  applyTheme(THEMES.STEMstarters);
+  document.title = "Try Dismissal Magic — practice school";
+  $app.innerHTML = `${demoBanner()}
+    <div class="demo-page">
+      <div class="demo-intro">
+        <div>
+          <h1>Try it: you're running dismissal at Sunnyside Elementary</h1>
+          <ol class="demo-steps">
+            <li>On the <b>classroom screen</b>, tap <b>K–1</b> to start it (like a teacher does once a day; it turns on the sound).</li>
+            <li>On the <b>School Dashboard</b>, tap <b>Mark arrived</b> on a bus.</li>
+            <li>Tap <b>📣 K–1</b> and watch the classroom light up.</li>
+          </ol>
+        </div>
+        <div class="demo-actions">
+          <a class="btn primary" href="/account?next=create">Start your free month</a>
+          <button class="btn" id="demo-reset">Reset demo</button>
+        </div>
+      </div>
+      <div class="demo-split">
+        <figure class="demo-pane"><figcaption>School Dashboard <span class="muted small">· the office</span> <a class="muted small" href="/demo/dashboard" target="_blank" rel="noopener">open full screen ↗</a></figcaption>
+          <iframe src="/demo/dashboard" title="School Dashboard (practice)" loading="eager"></iframe></figure>
+        <figure class="demo-pane"><figcaption>Classroom screen <span class="muted small">· a K–1 classroom</span> <a class="muted small" href="/demo/classroom" target="_blank" rel="noopener">open full screen ↗</a></figcaption>
+          <iframe src="/demo/classroom" title="Classroom screen (practice)" allow="autoplay" loading="eager"></iframe></figure>
+      </div>
+      <p class="muted small center">Everything here stays in your browser. Real schools get their own private links and PIN.</p>
+    </div>`;
+  document.getElementById("demo-reset").onclick = () => { seedDemo(true); store.set("busgroup:" + DEMO_CODE, "g-k1"); location.reload(); };
 }
 
 /* ================================ HOME ================================= */
@@ -1303,6 +1356,14 @@ function adminPanel(code, pin) {
     const homeBtn = document.getElementById("a-home");
     api.getUser().then((u) => { if (u && homeBtn) homeBtn.textContent = "← My schools"; });
     homeBtn.onclick = async () => { const u = await api.getUser(); feed.stop(); go(u ? "/account" : "/"); };
+    if (DEMO_ROUTE) {
+      // Practice school: no sharing or signing out; "home" goes back to the demo page.
+      document.getElementById("a-share").hidden = true;
+      document.getElementById("a-out").hidden = true;
+      homeBtn.hidden = window.self !== window.top;
+      homeBtn.textContent = "← Back to demo";
+      homeBtn.onclick = () => { window.top.location.href = "/demo"; };
+    }
     document.getElementById("a-share").onclick = () => {
       openModal(`<h2>Share</h2>${shareBlock(code)}<p class="muted">Teachers only need the classroom link. Backups need the School Dashboard link <i>and</i> the PIN.</p><div class="row"><button class="btn" data-close>Done</button></div>`);
       wireCopy($modal);

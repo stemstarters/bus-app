@@ -476,3 +476,20 @@ table.data .mono { font: 800 1rem var(--head); letter-spacing: .12em; color: #13
 .access-strip.ended .btn { text-decoration: none; }
 .btn.subscribe { background: var(--c-yellow); }
 .linklike { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--primary); text-decoration: underline; cursor: pointer; }
+
+/* ---------- /demo practice school ---------- */
+.demo-page { max-width: 1400px; margin: 0 auto; padding: 18px 20px 28px; }
+.demo-intro { display: flex; gap: 20px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; background: var(--card); border: 3px solid var(--ink); border-radius: 24px; padding: 18px 22px; }
+.demo-intro h1 { font: 800 1.6rem/1.2 var(--head); margin: 0 0 8px; }
+.demo-steps { margin: 0; padding-left: 1.3em; line-height: 1.7; }
+.demo-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.demo-split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+.demo-pane { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.demo-pane figcaption { font-weight: 700; }
+.demo-pane figcaption a { margin-left: 6px; }
+.demo-pane iframe { width: 100%; height: 72vh; min-height: 520px; border: 3px solid var(--ink); border-radius: 20px; background: var(--bg); }
+.demo-banner a { color: inherit; font-weight: 700; }
+@media (max-width: 900px) { .demo-split { grid-template-columns: 1fr; } .demo-pane iframe { height: 620px; } }
+.demo-page p.center { text-align: center; margin-top: 14px; }
+.demo-actions a.btn, .demo-banner a { text-decoration: none; }
+.demo-banner a { text-decoration: underline; }
