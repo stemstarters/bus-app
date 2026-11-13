@@ -76,6 +76,7 @@ const T = {
   tapToStart: ["Tap to start the classroom screen", "Toque para empezar"],
   pickGroup: ["Which students are in your class?", "¿Qué grados tiene su clase?"],
   allGroups: ["All groups (office view)", "Todos los grupos"],
+  everyone: ["Everyone", "Todos"],
   noBusesYet: ["No buses have arrived yet.", "Todavía no han llegado autobuses."],
   calledAt: ["Called at", "Llamado a las"],
   leftCampus: ["Left campus 👋", "Ya salió 👋"],
@@ -251,6 +252,8 @@ function walkersSVG(color, cls = "") {
   </svg>`;
 }
 const kindOf = (b) => b?.kind || "bus";
+// Vans and walkers are small groups: one "Call everyone" tap calls every grade group at once.
+const callsAll = (b) => kindOf(b) !== "bus";
 function vehicleSVG(b, cls = "") {
   const k = kindOf(b);
   return k === "van" ? vanSVG(b.color, cls) : k === "walkers" ? walkersSVG(b.color, cls) : busSVG(b.color, cls);
@@ -608,8 +611,19 @@ function applyOp(stateIn, op, settings) {
     case "leave": { const b = busOf(op.bus); b.arrived = b.arrived || now; if (b.left) return null; b.left = now; log({ type: "leave", bus: op.bus }); break; }
     case "unleave": { const b = busOf(op.bus); if (!b.left) return null; delete b.left; log({ type: "unleave", bus: op.bus }); break; }
     case "uncall": { const b = busOf(op.bus); delete b.called[op.group]; log({ type: "uncall", bus: op.bus, group: op.group }); break; }
+    case "callAll": {
+      const b = busOf(op.bus);
+      b.arrived = b.arrived || now;
+      (settings?.groups || []).forEach((g) => { b.called[g.id] = now; log({ type: "call", bus: op.bus, group: g.id }); });
+      break;
+    }
+    case "uncallAll": {
+      const b = busOf(op.bus);
+      Object.keys(b.called || {}).forEach((g) => { delete b.called[g]; log({ type: "uncall", bus: op.bus, group: g }); });
+      break;
+    }
     case "callGroup": {
-      const ids = settings.buses.map((b) => b.id).filter((id) => s.buses[id]?.arrived && !s.buses[id].left && !s.buses[id].called[op.group] && kindOf(settings.buses.find((b) => b.id === id)) !== "walkers");
+      const ids = settings.buses.map((b) => b.id).filter((id) => s.buses[id]?.arrived && !s.buses[id].left && !s.buses[id].called[op.group] && !callsAll(settings.buses.find((b) => b.id === id)));
       if (!ids.length) return null;
       ids.forEach((id) => { s.buses[id].called[op.group] = now; log({ type: "call", bus: id, group: op.group }); });
       break;
@@ -699,6 +713,7 @@ function seedDemo(force) {
   const settings = defaultSettings();
   settings.name = "Sunnyside Elementary";
   settings.groups = [{ id: "g-k1", name: "K–1" }, { id: "g-23", name: "2–3" }, { id: "g-45", name: "4–5" }];
+  settings.buses.push({ id: "b-van", kind: "van", name: "Sunshine Daycare", color: "#5ab0f2" }, { id: "b-walk", kind: "walkers", name: "Walkers", color: "#2FC2A3" });
   store.set(k, { settings, state: emptyState(0), pin: "0000", createdAt: Date.now() });
   store.set("buspin:" + DEMO_CODE, "0000");
   if (!store.get("busgroup:" + DEMO_CODE)) store.set("busgroup:" + DEMO_CODE, "g-k1");
@@ -1418,9 +1433,8 @@ function adminPanel(code, pin) {
 
     // Group bar: call a whole group for every arrived bus
     const bar = document.getElementById("group-bar");
-    const arrivedIds = settings.buses.filter((b) => kindOf(b) !== "walkers" && st.buses[b.id]?.arrived && !st.buses[b.id].left).map((b) => b.id);
-    const hasVans = settings.buses.some((b) => kindOf(b) === "van");
-    bar.innerHTML = `<div class="bar-label">Call a group for <b>every ${hasVans ? "bus and van" : "bus"} that's here</b>:</div>` + settings.groups.map((g) => {
+    const arrivedIds = settings.buses.filter((b) => !callsAll(b) && st.buses[b.id]?.arrived && !st.buses[b.id].left).map((b) => b.id);
+    bar.innerHTML = `<div class="bar-label">Call a group for <b>every bus that's here</b>:</div>` + settings.groups.map((g) => {
       const waiting = arrivedIds.filter((id) => !st.buses[id].called[g.id]).length;
       return `<button class="btn group-call ${waiting ? "" : "done"}" data-callgroup="${g.id}" ${waiting ? "" : "disabled"}>
         📣 ${esc(g.name)} <span class="count">${waiting ? `${waiting} bus${waiting > 1 ? "es" : ""}` : arrivedIds.length ? "✓ all called" : "—"}</span></button>`;
@@ -1452,11 +1466,17 @@ function adminPanel(code, pin) {
               <button class="btn arrive-btn ${arrived ? "on" : ""}" data-arrive="${b.id}">${arrived ? "✓ Arrived" : "Mark arrived"}</button>
               ${arrived ? `<button class="btn leave-btn ${allCalled ? "ready" : ""}" data-leave="${b.id}" title="Mark as gone">${leftWord}</button>` : ""}
             </div>`}
-        <div class="cells">${settings.groups.map((g) => {
+        ${callsAll(b) ? (() => {
+          const times = Object.values(s?.called || {});
+          const t = times.length ? Math.max(...times) : null;
+          const every = settings.groups.every((g) => s?.called?.[g.id]);
+          return `<div class="cells one"><button class="cell call-all ${every ? "called" : ""} ${!every && (walk || arrived) ? "next" : ""}" data-callall="${b.id}" data-done="${every ? 1 : ""}">
+            <span>📣 ${every ? "Everyone called" : "Call everyone"}</span><small>${every ? "✓ " + fmtTime(t) : "All grades at once"}</small></button></div>`;
+        })() : `<div class="cells">${settings.groups.map((g) => {
           const t = s?.called?.[g.id];
           return `<button class="cell ${t ? "called" : ""} ${!t && arrived && !walk && nextG?.id === g.id ? "next" : ""}" data-bus="${b.id}" data-group="${g.id}">
             <span>${esc(g.name)}</span><small>${t ? "✓ " + fmtTime(t) : "Call"}</small></button>`;
-        }).join("")}</div>
+        }).join("")}</div>`}
       </div>`;
     }).join("");
     grid.querySelectorAll("[data-arrive]").forEach((el) => (el.onclick = () => {
@@ -1470,6 +1490,16 @@ function adminPanel(code, pin) {
     grid.querySelectorAll("[data-unleave]").forEach((el) => (el.onclick = () => {
       const name = settings.buses.find((b) => b.id === el.dataset.unleave)?.name;
       confirmModal(`Mark ${esc(name)} as still here?`, "Yes, still here", () => act({ type: "unleave", bus: el.dataset.unleave }));
+    }));
+    grid.querySelectorAll("[data-callall]").forEach((el) => (el.onclick = () => {
+      const bus = el.dataset.callall;
+      if (el.dataset.done) {
+        const bn = settings.buses.find((b) => b.id === bus)?.name;
+        openModal(`<h2>${esc(bn)} · everyone</h2><p>Already called. What would you like to do?</p>
+          <div class="row"><button class="btn primary" id="m-again">🔔 Call again</button><button class="btn danger" id="m-undo">Undo call</button><button class="btn" data-close>Cancel</button></div>`);
+        document.getElementById("m-again").onclick = () => { closeModal(); act({ type: "callAll", bus }); };
+        document.getElementById("m-undo").onclick = () => { closeModal(); act({ type: "uncallAll", bus }); };
+      } else act({ type: "callAll", bus });
     }));
     grid.querySelectorAll("[data-bus]").forEach((el) => (el.onclick = () => {
       const bus = el.dataset.bus, group = el.dataset.group;
@@ -1485,8 +1515,16 @@ function adminPanel(code, pin) {
     // Log
     const busName = (id) => settings.buses.find((b) => b.id === id)?.name ?? "?";
     const grpName = (id) => settings.groups.find((g) => g.id === id)?.name ?? "?";
-    const lines = st.log.slice().reverse().map((e) => {
-      const what = { arrive: `🚌 ${esc(busName(e.bus))} arrived`, unarrive: `↩︎ ${esc(busName(e.bus))} arrival undone`, call: `📣 ${esc(busName(e.bus))} — called ${esc(grpName(e.group))}`, uncall: `↩︎ ${esc(busName(e.bus))} — ${esc(grpName(e.group))} call undone`, leave: `👋 ${esc(busName(e.bus))} left campus`, unleave: `↩︎ ${esc(busName(e.bus))} marked as still here` }[e.type];
+    // Merge the per-grade entries of a "Call everyone" (same vehicle, same moment) into one line.
+    const merged = [];
+    for (const e of st.log.slice().reverse()) {
+      const prev = merged[merged.length - 1];
+      if (prev && (e.type === "call" || e.type === "uncall") && prev.type === e.type && prev.bus === e.bus && prev.at === e.at && callsAll(settings.buses.find((b) => b.id === e.bus))) { prev.group = "*"; continue; }
+      merged.push({ ...e });
+    }
+    const grpLabel = (id) => (id === "*" ? "everyone" : grpName(id));
+    const lines = merged.map((e) => {
+      const what = { arrive: `🚌 ${esc(busName(e.bus))} arrived`, unarrive: `↩︎ ${esc(busName(e.bus))} arrival undone`, call: `📣 ${esc(busName(e.bus))} — called ${esc(grpLabel(e.group))}`, uncall: `↩︎ ${esc(busName(e.bus))} — ${esc(grpLabel(e.group))} call undone`, leave: `👋 ${esc(busName(e.bus))} left campus`, unleave: `↩︎ ${esc(busName(e.bus))} marked as still here` }[e.type];
       return what ? `<li><span class="muted">${fmtTime(e.at)}</span> ${what}</li>` : "";
     }).join("");
     document.getElementById("log").innerHTML = lines || `<li class="muted">Nothing yet today.</li>`;
@@ -1712,7 +1750,12 @@ function renderDisplay(code) {
   function detectNewCalls() {
     const st = liveState(school.state);
     if (lastDay !== st.day) { lastDay = st.day; lastSeq = 0; }
-    const fresh = st.log.filter((e) => e.seq > (lastSeq ?? 0) && e.type === "call" && (group === "all" || e.group === group) && Date.now() - e.at < GO_NOW_MS);
+    let fresh = st.log.filter((e) => e.seq > (lastSeq ?? 0) && e.type === "call" && (group === "all" || e.group === group) && Date.now() - e.at < GO_NOW_MS);
+    if (group === "all") {
+      // A "Call everyone" logs one call per grade at the same moment: show it once, as "Everyone".
+      const seen = new Map();
+      fresh = fresh.filter((e) => { const k = e.bus + "@" + e.at; if (seen.has(k)) { seen.get(k).everyone = true; return false; } seen.set(k, e); return true; });
+    }
     lastSeq = Math.max(lastSeq ?? 0, st.seq || 0);
     fresh.forEach((e) => queue.push(e));
     pump();
@@ -1723,7 +1766,7 @@ function renderDisplay(code) {
     const e = queue.shift();
     const { settings } = school;
     const bus = settings.buses.find((b) => b.id === e.bus);
-    const grp = settings.groups.find((g) => g.id === e.group);
+    const grp = e.everyone ? { name: tr("everyone", settings.lang) } : settings.groups.find((g) => g.id === e.group);
     if (!bus || !grp) return pump();
     showing = true;
     const lang = settings.lang;
