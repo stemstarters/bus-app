@@ -15,6 +15,13 @@
 // =====================================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Supabase's server key: newer projects provide SUPABASE_SECRET_KEYS (JSON), older ones SUPABASE_SERVICE_ROLE_KEY.
+function serverKey(): string {
+  const many = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (many) { try { const v = Object.values(JSON.parse(many)); if (v.length) return String(v[0]); } catch (_) { /* ignore */ } }
+  return Deno.env.get("SUPABASE_SECRET_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+}
+
 const PRICE_FOUNDING = Deno.env.get("STRIPE_PRICE_FOUNDING") || "price_1UbNdmPhls0y9gMoJDTiwBGY";
 const APP_TAG = "dismissal-magic";
 const GRACE_DAYS = 7; // a late card payment doesn't shut a school off on day one
@@ -77,7 +84,7 @@ Deno.serve(async (req) => {
       paidUntil = new Date().toISOString(); // ended
     } // "incomplete": leave as is until payment finishes
 
-    const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    const db = createClient(Deno.env.get("SUPABASE_URL")!, serverKey(), {
       auth: { persistSession: false },
     });
     const row: Record<string, unknown> = {
