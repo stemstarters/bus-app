@@ -475,7 +475,57 @@ function applyOp(stateIn, op, settings) {
 
 /* ================================ BOOT ================================= */
 let cleanup = () => {};
+/* ---------------- moving from bus.stemstarters.com ---------------- */
+// Old address → new address. Settings saved in this browser (teacher's group,
+// waiting video, remembered schools) ride along in the #hash, which is never sent
+// to any server. PINs are NOT carried over; people just type them once more.
+const NEW_HOST = "app.dismissalmagic.com";
+const OLD_HOSTS = ["bus.stemstarters.com"];
+const CARRY_PREFIXES = ["busgroup:", "busvideo:", "busrecent"];
+function importCarried() {
+  const m = /(?:^#|&)carry=([^&]+)/.exec(location.hash);
+  if (!m) return;
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
+    for (const [k, v] of Object.entries(data)) {
+      if (!CARRY_PREFIXES.some((p) => k.startsWith(p))) continue;
+      if (k === "busrecent") {
+        const mine = store.get("busrecent") || [];
+        const merged = [...mine, ...(JSON.parse(v) || [])].filter((x, i, arr) => x && arr.findIndex((y) => y.code === x.code) === i);
+        store.set("busrecent", merged.slice(0, 12));
+      } else if (localStorage.getItem(k) === null) localStorage.setItem(k, v);
+    }
+  } catch {}
+  history.replaceState({}, "", location.pathname + location.search);
+}
+async function moveToNewHost() {
+  if (!OLD_HOSTS.includes(location.hostname)) return false;
+  // Only move if the new address actually loads here (e.g. not blocked by a school web filter).
+  const ok = await Promise.race([
+    fetch(`https://${NEW_HOST}/favicon.svg?ping=${Date.now()}`, { mode: "no-cors", cache: "no-store" }).then(() => true, () => false),
+    new Promise((r) => setTimeout(() => r(false), 4000)),
+  ]);
+  if (!ok) return false;
+  const carry = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (CARRY_PREFIXES.some((p) => k.startsWith(p))) carry[k] = localStorage.getItem(k);
+    }
+  } catch {}
+  const hash = Object.keys(carry).length ? "#carry=" + encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(carry))))) : location.hash;
+  location.replace(`https://${NEW_HOST}${location.pathname}${location.search}${hash}`);
+  return true;
+}
+
+let moving = null;
 async function boot() {
+  if (moving === null) {
+    $app.innerHTML = `<div class="loading">🚌 Loading…</div>`;
+    moving = await moveToNewHost();
+    importCarried();
+  }
+  if (moving) return;
   cleanup(); cleanup = () => {};
   closeModal();
   if (!api) api = DEMO ? makeDemoApi() : await makeSupabaseApi().catch((e) => { console.error(e); return null; });
