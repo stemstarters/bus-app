@@ -61,6 +61,10 @@ function route() {
 }
 function go(path) { history.pushState({}, "", path); boot(); }
 window.addEventListener("popstate", () => boot());
+// Installable app ("Add to Home Screen" / "Install Dismissal Magic").
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
 
 /* ------------------------------ language ------------------------------ */
 const T = {
