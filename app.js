@@ -362,17 +362,6 @@ function makeDemoApi() {
       const schools = Object.entries(owners).filter(([c, e]) => e === u.email && load(c)).map(([c]) => ({ code: c, name: load(c).settings?.name }));
       return { ok: true, schools };
     },
-    async claimSchool(code, pin) {
-      const u = demoUser();
-      if (!u) return { ok: false, error: "signed_out" };
-      const s = load(code);
-      if (!s) return { ok: false, error: "not_found" };
-      if (s.pin !== pin) return { ok: false, error: "bad_pin" };
-      const owners = store.get("busdemo-owners") || {};
-      if (owners[code] && owners[code] !== u.email) return { ok: false, error: "owned" };
-      owners[code] = u.email; store.set("busdemo-owners", owners);
-      return { ok: true, code };
-    },
     async createSchool(settings, pin) {
       const u = demoUser();
       if (!u) return { ok: false, error: "signed_out" };
@@ -499,7 +488,6 @@ async function makeSupabaseApi() {
     },
     async signOut() { await sb.auth.signOut(); },
     mySchools: () => rpc("bus_my_schools", {}),
-    claimSchool: (code, pin) => rpc("bus_claim_school", { p_code: code, p_pin: pin }),
     createSchool: (settings, pin) => rpc("bus_create_school_owned", { p_settings: settings, p_pin: pin }),
     async getSchool(code) {
       const { data, error } = await sb.rpc("bus_get_school", { p_code: code });
@@ -532,7 +520,6 @@ const ERRORS = {
   network: "Couldn't reach the server. Check the internet connection and try again.",
   settings_invalid: "Those settings couldn't be saved.",
   signed_out: "Please sign in to your account first.",
-  owned: "That school is already linked to a different account.",
   too_many_emails: "Too many sign-in emails were sent. Wait a few minutes and try again.",
   email_failed: "We couldn't send the sign-in email. Check the address and try again.",
   school_limit: `Each account can have up to ${SCHOOL_LIMIT} schools for now. Need more? Email hello@dismissalmagic.com.`,
@@ -845,35 +832,12 @@ function renderAccount(next) {
           <div class="row wrap between"><h2>Your schools</h2><button class="btn primary" id="acct-create">+ Create a school</button></div>
           <div id="my-schools"><p class="muted">Loading…</p></div>
         </section>
-        <section class="card step s4 find-card">
-          <h2>Add a school you already set up</h2>
-          <p class="muted">Made a school before accounts? Link it here with its code and School Dashboard PIN.</p>
-          <form id="claim" class="find-form">
-            <label>School code<input id="claim-code" maxlength="80" placeholder="ABC123" autocomplete="off" autocapitalize="characters" required /></label>
-            <label>PIN<input id="claim-pin" type="password" inputmode="numeric" autocomplete="current-password" required /></label>
-            <button class="btn primary" type="submit">Add school</button>
-          </form>
-          <p class="err" id="claim-err"></p>
-        </section>
         <div class="row center"><button class="btn" id="acct-signout">Sign out</button></div>
         <footer class="app-foot">© 2026 STEMstarters LLC · <a href="https://dismissalmagic.com/privacy">Privacy Policy</a> · <a href="https://dismissalmagic.com/terms">Terms of Service</a></footer>
       </div>`;
     document.getElementById("back").onclick = () => go("/");
     document.getElementById("acct-create").onclick = async () => { if (await roomForSchool()) renderSetup(); };
     document.getElementById("acct-signout").onclick = async () => { await api.signOut(); go("/"); };
-    document.getElementById("claim").onsubmit = async (e) => {
-      e.preventDefault();
-      const err = document.getElementById("claim-err");
-      const code = extractCode("/" + document.getElementById("claim-code").value.trim().replace(/^\/+/, ""));
-      const pin = document.getElementById("claim-pin").value.trim();
-      err.textContent = "";
-      if (!code) { err.textContent = "Type the 6-letter school code (or paste the link)."; return; }
-      const r = await api.claimSchool(code, pin);
-      if (!r?.ok) { err.textContent = ERRORS[r?.error] || ERRORS.network; return; }
-      toast(r.already ? "That school is already in your account." : "School added to your account!");
-      e.target.reset();
-      loadSchools();
-    };
     loadSchools();
   }
 
@@ -882,7 +846,7 @@ function renderAccount(next) {
     if (!box) return;
     const r = await api.mySchools();
     if (!r?.ok) { box.innerHTML = `<p class="err">${esc(ERRORS[r?.error] || ERRORS.network)}</p>`; return; }
-    if (!r.schools.length) { box.innerHTML = `<p class="muted">No schools yet. Create one, or add a school you already set up below.</p>`; return; }
+    if (!r.schools.length) { box.innerHTML = `<p class="muted">No schools yet. Create your first one!</p>`; return; }
     r.schools.forEach((x) => rememberSchool(x.code, x.name));
     box.innerHTML = `<div class="recent-list">${r.schools.map((x) => `
       <div class="recent-row">
