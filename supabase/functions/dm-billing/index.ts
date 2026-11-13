@@ -1,5 +1,5 @@
 // =====================================================================
-// billing — Dismissal Magic checkout + "manage billing" links
+// dm-billing — Dismissal Magic checkout + "manage billing" links
 //
 // Called from the app by a SIGNED-IN school owner:
 //   { action: "checkout", code }  → Stripe Checkout page to subscribe that school
