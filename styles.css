@@ -450,3 +450,6 @@ table.data .mono { font: 800 1rem var(--head); letter-spacing: .12em; color: #13
 .share-row .row a.btn { text-decoration: none; }
 .toast { max-width: 92vw; word-break: break-all; text-align: center; }
 .share-row .btn { white-space: nowrap; }
+
+/* vans & walkers */
+.bus-card .bus-name { overflow-wrap: anywhere; }

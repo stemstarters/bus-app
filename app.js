@@ -61,7 +61,10 @@ const T = {
   goNow: ["GO NOW!", "¡YA!"],
   sent: ["Sent", "Enviado"],
   sendRiders: ["Send your riders down!", "¡Manden a sus estudiantes!"],
+  sendWalkers: ["Send your walkers!", "¡Manden a los que caminan!"],
   bus: ["bus", "autobús"],
+  walkWait: ["Get ready to walk", "Prepárense para caminar"],
+  walkersOut: ["All walkers out 👋", "Ya salieron 👋"],
   tapToStart: ["Tap to start the classroom screen", "Toque para empezar"],
   pickGroup: ["Which students are in your class?", "¿Qué grados tiene su clase?"],
   allGroups: ["All groups (office view)", "Todos los grupos"],
@@ -194,6 +197,65 @@ function busSVG(color, cls = "") {
     <g class="wheel"><circle cx="48" cy="102" r="15" fill="${ink}"/><circle cx="48" cy="102" r="6" fill="${dark ? "#bbb" : "#e9ecef"}"/></g>
     <g class="wheel"><circle cx="180" cy="102" r="15" fill="${ink}"/><circle cx="180" cy="102" r="6" fill="${dark ? "#bbb" : "#e9ecef"}"/></g>
   </svg>`;
+}
+
+/* ------------------------ vans, walkers, helpers ----------------------- */
+function vanSVG(color, cls = "") {
+  const dark = luminance(color) < 0.3, ink = "#2b2d42", glass = "#dff3ff";
+  return `<svg class="bus-svg van-svg ${cls}" viewBox="0 0 220 128" aria-hidden="true">
+    <ellipse cx="114" cy="120" rx="90" ry="6" fill="rgba(0,0,0,.12)"/>
+    <path d="M26 102 V48 Q26 26 48 26 H146 Q160 26 170 38 L196 64 Q210 68 210 82 V102 Z" fill="${color}" stroke="${ink}" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="38" y="36" width="30" height="24" rx="6" fill="${glass}" stroke="${ink}" stroke-width="3"/>
+    <rect x="76" y="36" width="30" height="24" rx="6" fill="${glass}" stroke="${ink}" stroke-width="3"/>
+    <rect x="114" y="36" width="28" height="24" rx="6" fill="${glass}" stroke="${ink}" stroke-width="3"/>
+    <path d="M150 36 H160 Q164 36 167 40 L186 62 H150 Z" fill="${glass}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
+    <line x1="110" y1="36" x2="110" y2="96" stroke="${ink}" stroke-width="2.5"/>
+    <rect x="96" y="70" width="10" height="4" rx="2" fill="${ink}"/>
+    <rect x="28" y="74" width="168" height="5" fill="rgba(0,0,0,.14)"/>
+    <circle cx="186" cy="76" r="4" fill="${ink}"/><circle cx="198" cy="76" r="4" fill="${ink}"/>
+    <circle cx="187.3" cy="74.6" r="1.4" fill="#fff"/><circle cx="199.3" cy="74.6" r="1.4" fill="#fff"/>
+    <circle cx="181" cy="86" r="3.2" fill="#ff8fab" opacity=".85"/><circle cx="203" cy="86" r="3.2" fill="#ff8fab" opacity=".85"/>
+    <path d="M187 85 Q192 90.5 197 85" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="207" cy="94" r="3.5" fill="#fff3b0" stroke="${ink}" stroke-width="2"/>
+    <rect x="198" y="98" width="16" height="7" rx="3" fill="${ink}"/><rect x="18" y="98" width="14" height="7" rx="3" fill="${ink}"/>
+    <g class="wheel"><circle cx="62" cy="102" r="14" fill="${ink}"/><circle cx="62" cy="102" r="5.5" fill="${dark ? "#bbb" : "#e9ecef"}"/></g>
+    <g class="wheel"><circle cx="170" cy="102" r="14" fill="${ink}"/><circle cx="170" cy="102" r="5.5" fill="${dark ? "#bbb" : "#e9ecef"}"/></g>
+  </svg>`;
+}
+function walkersSVG(color, cls = "") {
+  const ink = "#2b2d42";
+  const kid = (x, s, skin, hair, step) => {
+    const k = (v) => v * s;
+    return `<g transform="translate(${x} ${128 - k(118)})">
+      <rect x="${k(10)}" y="${k(44)}" width="${k(20)}" height="${k(30)}" rx="${k(7)}" fill="#ffd23f" stroke="${ink}" stroke-width="3"/>
+      <line x1="${k(30)}" y1="${k(80)}" x2="${k(30 - step)}" y2="${k(112)}" stroke="${ink}" stroke-width="${k(7)}" stroke-linecap="round"/>
+      <line x1="${k(42)}" y1="${k(80)}" x2="${k(42 + step)}" y2="${k(112)}" stroke="${ink}" stroke-width="${k(7)}" stroke-linecap="round"/>
+      <rect x="${k(22)}" y="${k(40)}" width="${k(30)}" height="${k(44)}" rx="${k(11)}" fill="${color}" stroke="${ink}" stroke-width="3"/>
+      <line x1="${k(48)}" y1="${k(50)}" x2="${k(60)}" y2="${k(72)}" stroke="${ink}" stroke-width="${k(6)}" stroke-linecap="round"/>
+      <circle cx="${k(37)}" cy="${k(24)}" r="${k(16)}" fill="${skin}" stroke="${ink}" stroke-width="3"/>
+      <path d="M${k(21)} ${k(22)} Q${k(24)} ${k(6)} ${k(39)} ${k(8)} Q${k(53)} ${k(9)} ${k(53)} ${k(22)} Q${k(45)} ${k(14)} ${k(32)} ${k(17)} Z" fill="${hair}"/>
+      <circle cx="${k(42)}" cy="${k(24)}" r="${k(2.3)}" fill="${ink}"/><circle cx="${k(49)}" cy="${k(24)}" r="${k(2.3)}" fill="${ink}"/>
+      <path d="M${k(41)} ${k(31)} Q${k(45)} ${k(35)} ${k(49)} ${k(31)}" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round"/>
+    </g>`;
+  };
+  return `<svg class="bus-svg walk-svg ${cls}" viewBox="0 0 220 128" aria-hidden="true">
+    <ellipse cx="110" cy="122" rx="78" ry="5" fill="rgba(0,0,0,.12)"/>
+    ${kid(52, 1, "#f1c27d", "#6b3e26", 8)}
+    ${kid(118, 0.86, "#8d5524", "#2b2d42", -6)}
+  </svg>`;
+}
+const kindOf = (b) => b?.kind || "bus";
+function vehicleSVG(b, cls = "") {
+  const k = kindOf(b);
+  return k === "van" ? vanSVG(b.color, cls) : k === "walkers" ? walkersSVG(b.color, cls) : busSVG(b.color, cls);
+}
+// "Red bus", "KinderCare van", "Walkers"
+function itemTitle(b, lang) {
+  const k = kindOf(b), n = b.name || "";
+  if (k === "walkers") return n || (lang === "es" ? "Caminantes" : "Walkers");
+  const word = k === "van" ? (lang === "es" ? "Camioneta" : "van") : (lang === "es" ? "Autobús" : "bus");
+  if (new RegExp(`\\b(${k}|van|bus)\\b`, "i").test(n)) return n;
+  return lang === "es" ? `${word} ${n}` : `${n} ${word}`;
 }
 
 /* -------------------------------- chime -------------------------------- */
@@ -472,7 +534,7 @@ function applyOp(stateIn, op, settings) {
     case "unleave": { const b = busOf(op.bus); if (!b.left) return null; delete b.left; log({ type: "unleave", bus: op.bus }); break; }
     case "uncall": { const b = busOf(op.bus); delete b.called[op.group]; log({ type: "uncall", bus: op.bus, group: op.group }); break; }
     case "callGroup": {
-      const ids = settings.buses.map((b) => b.id).filter((id) => s.buses[id]?.arrived && !s.buses[id].left && !s.buses[id].called[op.group]);
+      const ids = settings.buses.map((b) => b.id).filter((id) => s.buses[id]?.arrived && !s.buses[id].left && !s.buses[id].called[op.group] && kindOf(settings.buses.find((b) => b.id === id)) !== "walkers");
       if (!ids.length) return null;
       ids.forEach((id) => { s.buses[id].called[op.group] = now; log({ type: "call", bus: id, group: op.group }); });
       break;
@@ -661,7 +723,7 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete
         </section>
 
         <section class="card step s2">
-          <h2>${chip(2)} Your buses</h2>
+          <h2>${chip(2)} Buses, vans &amp; walkers</h2>
           <div class="row wrap">
             <button type="button" class="btn small" id="preset-colors">Color buses (Red, Green, Yellow, Orange)</button>
             <span class="row nowrap">
@@ -672,13 +734,18 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete
           <div class="list" id="bus-list">
             ${st.buses.map((b, i) => `
               <div class="list-row">
-                <span class="mini-bus">${busSVG(b.color)}</span>
-                <input type="color" data-bcolor="${i}" value="${esc(b.color)}" title="Bus color" />
-                <input data-bname="${i}" value="${esc(b.name)}" placeholder="Bus name or number" required />
+                <span class="mini-bus">${vehicleSVG(b)}</span>
+                <input type="color" data-bcolor="${i}" value="${esc(b.color)}" title="${kindOf(b) === "walkers" ? "Shirt color" : "Color"}" />
+                <input data-bname="${i}" value="${esc(b.name)}" placeholder="${kindOf(b) === "van" ? "Van name (like a daycare)" : kindOf(b) === "walkers" ? "Walkers (or a door, like Front door walkers)" : "Bus name or number"}" required />
                 <button type="button" class="icon-btn" data-bdel="${i}" title="Remove">✕</button>
               </div>`).join("")}
           </div>
-          <button type="button" class="btn small" id="add-bus">+ Add a bus</button>
+          <div class="row wrap">
+            <button type="button" class="btn small" id="add-bus">+ Add a bus</button>
+            <button type="button" class="btn small" id="add-van">+ Add a van</button>
+            <button type="button" class="btn small" id="add-walkers">+ Add walkers</button>
+          </div>
+          <p class="muted small">Vans and walkers only show up if you add them.</p>
         </section>
 
         <section class="card step s3">
@@ -766,15 +833,19 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete
     const q = (s) => container.querySelector(s);
     const rerender = (fn) => () => { readInputs(); fn(); render(); };
     q("#add-bus").onclick = rerender(() => st.buses.push({ id: uid("b"), name: "", color: "#ffc300" }));
-    q("#preset-colors").onclick = rerender(() => (st.buses = COLOR_BUSES.map((b) => ({ id: uid("b"), ...b }))));
+    q("#add-van").onclick = rerender(() => st.buses.push({ id: uid("b"), kind: "van", name: "", color: "#5ab0f2" }));
+    q("#add-walkers").onclick = rerender(() => st.buses.push({ id: uid("b"), kind: "walkers", name: "Walkers", color: "#2FC2A3" }));
+    const others = () => st.buses.filter((b) => kindOf(b) !== "bus");
+    q("#preset-colors").onclick = rerender(() => (st.buses = [...COLOR_BUSES.map((b) => ({ id: uid("b"), ...b })), ...others()]));
     q("#preset-numbers").onclick = rerender(() => {
       const n = Math.min(60, Math.max(1, parseInt(q("#num-count").value, 10) || 1));
-      st.buses = Array.from({ length: n }, (_, i) => ({ id: uid("b"), name: String(i + 1), color: "#ffc300" }));
+      st.buses = [...Array.from({ length: n }, (_, i) => ({ id: uid("b"), name: String(i + 1), color: "#ffc300" })), ...others()];
     });
     container.querySelectorAll("[data-bdel]").forEach((el) => (el.onclick = rerender(() => st.buses.splice(+el.dataset.bdel, 1))));
     container.querySelectorAll("[data-bcolor]").forEach((el) => (el.oninput = () => {
       const row = el.closest(".list-row");
-      row.querySelector(".mini-bus").innerHTML = busSVG(el.value);
+      const it = st.buses[+el.dataset.bcolor];
+      row.querySelector(".mini-bus").innerHTML = vehicleSVG({ ...it, color: el.value });
     }));
     q("#add-group").onclick = rerender(() => st.groups.push({ id: uid("g"), name: "" }));
     container.querySelectorAll("[data-gdel]").forEach((el) => (el.onclick = rerender(() => st.groups.splice(+el.dataset.gdel, 1))));
@@ -797,7 +868,7 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete
       const pin = q("#s-pin").value.trim(), pin2 = q("#s-pin2").value.trim();
       if (!st.name) return (err.textContent = "Add your school name.");
       if (!st.buses.length) return (err.textContent = "Add at least one bus.");
-      if (st.buses.some((b) => !b.name)) return (err.textContent = "Every bus needs a name or number.");
+      if (st.buses.some((b) => !b.name)) return (err.textContent = "Every bus, van and walker group needs a name.");
       if (!st.groups.length) return (err.textContent = "Add at least one group.");
       if (st.groups.some((g) => !g.name)) return (err.textContent = "Every group needs a name.");
       if (mode === "create" || pin) {
@@ -1044,8 +1115,9 @@ function adminPanel(code, pin) {
 
     // Group bar: call a whole group for every arrived bus
     const bar = document.getElementById("group-bar");
-    const arrivedIds = settings.buses.filter((b) => st.buses[b.id]?.arrived && !st.buses[b.id].left).map((b) => b.id);
-    bar.innerHTML = `<div class="bar-label">Call a group for <b>every bus that's here</b>:</div>` + settings.groups.map((g) => {
+    const arrivedIds = settings.buses.filter((b) => kindOf(b) !== "walkers" && st.buses[b.id]?.arrived && !st.buses[b.id].left).map((b) => b.id);
+    const hasVans = settings.buses.some((b) => kindOf(b) === "van");
+    bar.innerHTML = `<div class="bar-label">Call a group for <b>every ${hasVans ? "bus and van" : "bus"} that's here</b>:</div>` + settings.groups.map((g) => {
       const waiting = arrivedIds.filter((id) => !st.buses[id].called[g.id]).length;
       return `<button class="btn group-call ${waiting ? "" : "done"}" data-callgroup="${g.id}" ${waiting ? "" : "disabled"}>
         📣 ${esc(g.name)} <span class="count">${waiting ? `${waiting} bus${waiting > 1 ? "es" : ""}` : arrivedIds.length ? "✓ all called" : "—"}</span></button>`;
@@ -1060,18 +1132,26 @@ function adminPanel(code, pin) {
       const left = !!s?.left;
       const nextG = settings.groups.find((g) => !s?.called?.[g.id]);
       const allCalled = arrived && !nextG;
-      const sub = left ? `Left campus at ${fmtTime(s.left)}` : arrived ? `Here since ${fmtTime(s.arrived)}` : "Not here yet";
-      return `<div class="card bus-card ${arrived ? "arrived" : ""} ${left ? "gone" : ""}">
-        <div class="bus-head">${busSVG(b.color, left || !arrived ? "faded" : "parked")}<div><div class="bus-name">${esc(b.name)}</div><div class="muted small">${sub}</div></div></div>
+      const kind = kindOf(b), walk = kind === "walkers";
+      const anyCalled = Object.keys(s?.called || {}).length > 0;
+      const sub = walk
+        ? (left ? `All out at ${fmtTime(s.left)}` : anyCalled ? "Being called" : "Waiting to be called")
+        : left ? `Left campus at ${fmtTime(s.left)}` : arrived ? `Here since ${fmtTime(s.arrived)}` : "Not here yet";
+      const leftWord = walk ? "All out" : kind === "van" ? "Van left" : "Bus left";
+      const showAsHere = walk || arrived;
+      return `<div class="card bus-card kind-${kind} ${arrived ? "arrived" : ""} ${left ? "gone" : ""}">
+        <div class="bus-head">${vehicleSVG(b, left || !showAsHere ? "faded" : "parked")}<div><div class="bus-name">${esc(b.name)}</div><div class="muted small">${sub}</div></div></div>
         ${left
-          ? `<button class="btn arrive-btn left-btn on" data-unleave="${b.id}">✓ Left campus</button>`
-          : `<div class="row nowrap two-btn">
+          ? `<button class="btn arrive-btn left-btn on" data-unleave="${b.id}">✓ ${walk ? "All walkers out" : "Left campus"}</button>`
+          : walk
+            ? (anyCalled ? `<button class="btn arrive-btn leave-btn ${allCalled ? "ready" : ""}" data-leave="${b.id}">All walkers out</button>` : "")
+            : `<div class="row nowrap two-btn">
               <button class="btn arrive-btn ${arrived ? "on" : ""}" data-arrive="${b.id}">${arrived ? "✓ Arrived" : "Mark arrived"}</button>
-              ${arrived ? `<button class="btn leave-btn ${allCalled ? "ready" : ""}" data-leave="${b.id}" title="Mark this bus as gone">Bus left</button>` : ""}
+              ${arrived ? `<button class="btn leave-btn ${allCalled ? "ready" : ""}" data-leave="${b.id}" title="Mark as gone">${leftWord}</button>` : ""}
             </div>`}
         <div class="cells">${settings.groups.map((g) => {
           const t = s?.called?.[g.id];
-          return `<button class="cell ${t ? "called" : ""} ${!t && arrived && nextG?.id === g.id ? "next" : ""}" data-bus="${b.id}" data-group="${g.id}">
+          return `<button class="cell ${t ? "called" : ""} ${!t && arrived && !walk && nextG?.id === g.id ? "next" : ""}" data-bus="${b.id}" data-group="${g.id}">
             <span>${esc(g.name)}</span><small>${t ? "✓ " + fmtTime(t) : "Call"}</small></button>`;
         }).join("")}</div>
       </div>`;
@@ -1080,13 +1160,13 @@ function adminPanel(code, pin) {
       const id = el.dataset.arrive;
       if (st.buses[id]?.arrived) {
         const name = settings.buses.find((b) => b.id === id)?.name;
-        confirmModal(`Undo arrival for the ${esc(name)} bus? This also clears its calls.`, "Undo arrival", () => act({ type: "unarrive", bus: id }));
+        confirmModal(`Undo arrival for ${esc(name)}? This also clears its calls.`, "Undo arrival", () => act({ type: "unarrive", bus: id }));
       } else act({ type: "arrive", bus: id });
     }));
     grid.querySelectorAll("[data-leave]").forEach((el) => (el.onclick = () => act({ type: "leave", bus: el.dataset.leave })));
     grid.querySelectorAll("[data-unleave]").forEach((el) => (el.onclick = () => {
       const name = settings.buses.find((b) => b.id === el.dataset.unleave)?.name;
-      confirmModal(`Mark the ${esc(name)} bus as still here?`, "Yes, it's still here", () => act({ type: "unleave", bus: el.dataset.unleave }));
+      confirmModal(`Mark ${esc(name)} as still here?`, "Yes, still here", () => act({ type: "unleave", bus: el.dataset.unleave }));
     }));
     grid.querySelectorAll("[data-bus]").forEach((el) => (el.onclick = () => {
       const bus = el.dataset.bus, group = el.dataset.group;
@@ -1348,13 +1428,13 @@ function renderDisplay(code) {
     if (!layer) { showing = false; return; }
     pauseVideo();
     layer.style.setProperty("--bus", bus.color);
-    layer.innerHTML = `<div class="road-strip" aria-hidden="true">${[0, 1, 2].map((i) => `<span style="--d:${i}">${busSVG(bus.color)}</span>`).join("")}</div>
+    layer.innerHTML = `<div class="road-strip" aria-hidden="true">${[0, 1, 2].map((i) => `<span style="--d:${i}">${vehicleSVG(bus)}</span>`).join("")}</div>
     <div class="popup" style="--bus:${esc(bus.color)}">
       <div class="confetti">${Array.from({ length: 24 }, (_, i) => `<i style="--i:${i};--c:${i % 3 ? "var(--accent)" : esc(bus.color)}"></i>`).join("")}</div>
-      <div class="popup-bus">${busSVG(bus.color, "drive-in bounce")}</div>
-      <div class="popup-title">${lang === "es" ? `Autobús ${esc(bus.name)}` : `${esc(bus.name)} bus`}</div>
+      <div class="popup-bus">${vehicleSVG(bus, "drive-in bounce")}</div>
+      <div class="popup-title">${esc(itemTitle(bus, lang))}</div>
       <div class="popup-group">${esc(grp.name)}</div>
-      <div class="popup-sub">${tr("sendRiders", lang)}</div>
+      <div class="popup-sub">${tr(kindOf(bus) === "walkers" ? "sendWalkers" : "sendRiders", lang)}</div>
       <div class="muted small">Tap to close</div>
     </div>`;
     playSound(soundOf(settings));
@@ -1386,8 +1466,9 @@ function renderDisplay(code) {
     const goneZone = document.getElementById("road-gone");
     const beforeX = new Map([...road.querySelectorAll("[data-road]")].map((n) => [n.dataset.road, n.getBoundingClientRect().left]));
     const info = (b) => st.buses[b.id] || {};
-    const hereList = settings.buses.filter((b) => info(b).arrived && !info(b).left).sort((x, y) => info(y).arrived - info(x).arrived);
-    const goneList = settings.buses.filter((b) => info(b).left).sort((x, y) => info(y).left - info(x).left);
+    const onRoad = settings.buses.filter((b) => kindOf(b) !== "walkers");
+    const hereList = onRoad.filter((b) => info(b).arrived && !info(b).left).sort((x, y) => info(y).arrived - info(x).arrived);
+    const goneList = onRoad.filter((b) => info(b).left).sort((x, y) => info(y).left - info(x).left);
     const keep = new Set([...hereList, ...goneList].map((b) => b.id));
     road.querySelectorAll("[data-road]").forEach((n) => { if (!keep.has(n.dataset.road)) n.remove(); });
     const busEl = (b) => {
@@ -1396,7 +1477,8 @@ function renderDisplay(code) {
         el = document.createElement("div");
         el.className = "road-bus";
         el.dataset.road = b.id;
-        el.innerHTML = busSVG(b.color, "drive-in") + `<span>${esc(b.name)}</span>`;
+        el.className = "road-bus kind-" + kindOf(b);
+        el.innerHTML = vehicleSVG(b, "drive-in") + `<span>${esc(b.name)}</span>`;
       }
       return el;
     };
@@ -1422,21 +1504,23 @@ function renderDisplay(code) {
     document.getElementById("d-grid").innerHTML = sorted.map((b) => {
       const s = st.buses[b.id];
       let status = "away", label = tr("onTheWay", lang), sub = "";
-      if (s?.arrived) { status = "here"; label = tr("here", lang); }
+      const walk = kindOf(b) === "walkers";
+      if (walk) { status = "here"; label = tr("walkWait", lang); }
+      else if (s?.arrived) { status = "here"; label = tr("here", lang); }
       const callsHere = groupsToShow.map((g) => s?.called?.[g.id]).filter(Boolean);
       if (group !== "all" && callsHere.length) {
         const t = callsHere[0];
-        if (now - t < GO_NOW_MS && !s?.left) { status = "go"; label = tr("goNow", lang); sub = tr("sendRiders", lang); }
+        if (now - t < GO_NOW_MS && !s?.left) { status = "go"; label = tr("goNow", lang); sub = tr(walk ? "sendWalkers" : "sendRiders", lang); }
         else { status = "sent"; label = `✓ ${tr("sent", lang)}`; sub = `${tr("calledAt", lang)} ${fmtTime(t)}`; }
       }
-      if (s?.left) { status = "left"; label = tr("leftCampus", lang); sub = `${tr("leftAt", lang)} ${fmtTime(s.left)}`; }
+      if (s?.left) { status = "left"; label = tr(walk ? "walkersOut" : "leftCampus", lang); sub = `${tr("leftAt", lang)} ${fmtTime(s.left)}`; }
       const chips = group === "all"
         ? `<div class="chips">${settings.groups.map((g) => { const t = s?.called?.[g.id]; const cls = t ? (now - t < GO_NOW_MS ? "go" : "sent") : ""; return `<span class="g-chip ${cls}">${esc(g.name)}${t ? " ✓" : ""}</span>`; }).join("")}</div>`
         : "";
       return `<div class="d-card ${status}" style="--bus:${esc(b.color)}">
-        <div class="d-bus">${busSVG(b.color, status === "go" ? "bounce" : status === "away" ? "soft" : status === "left" ? "gone" : "")}</div>
+        <div class="d-bus">${vehicleSVG(b, status === "go" ? "bounce" : status === "away" ? "soft" : status === "left" ? "gone" : "")}</div>
         <div class="d-name">${esc(b.name)}</div>
-        <div class="d-status ${status === "go" ? "" : "pill"}">${status === "away" ? "🕒 " : status === "here" ? "📍 " : ""}${label}</div>
+        <div class="d-status ${status === "go" ? "" : "pill"}">${status === "away" ? "🕒 " : status === "here" ? (walk ? "🚶 " : "📍 ") : ""}${label}</div>
         ${sub ? `<div class="d-sub">${sub}</div>` : ""}
         ${chips}
       </div>`;
