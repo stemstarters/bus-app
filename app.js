@@ -4,7 +4,7 @@ import { CONFIG } from "./config.js";
    Dismissal Magic — one page, three screens:
      /               → home (create a school / enter a code)
      /CODE           → classroom screen
-     /CODE/admin     → master panel (PIN)
+     /CODE/admin     → School Dashboard (PIN)
    ===================================================================== */
 
 const $app = document.getElementById("app");
@@ -524,7 +524,7 @@ async function makeSupabaseApi() {
 
 const ERRORS = {
   bad_pin: "That PIN didn't match.",
-  locked: "Too many wrong PINs. The master panel is locked for 15 minutes.",
+  locked: "Too many wrong PINs. The School Dashboard is locked for 15 minutes.",
   not_found: "We couldn't find that school code.",
   pin_format: "The PIN must be 4–8 digits (numbers only).",
   network: "Couldn't reach the server. Check the internet connection and try again.",
@@ -688,7 +688,7 @@ function renderHome() {
             <label class="sr" for="join-code">School code or link</label><input id="join-code" class="code-input" maxlength="80" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false" />
             <div class="row">
               <button class="btn primary" type="submit">Open classroom screen</button>
-              <button class="btn" type="button" id="join-admin">Master panel</button>
+              <button class="btn" type="button" id="join-admin">School Dashboard</button>
             </div>
             <p class="err" id="join-err"></p>
           </form>
@@ -709,8 +709,8 @@ function renderHome() {
             <div class="recent-row">
               <div class="recent-name"><b>${esc(r.name || "School")}</b><span class="recent-code">${esc(r.code)}</span></div>
               <div class="row">
-                <a class="btn small" href="/${esc(r.code)}">Classroom screen</a>
-                <a class="btn small primary" href="/${esc(r.code)}/admin">Master panel</a>
+                <a class="btn small" href="/${esc(r.code)}" target="_blank" rel="noopener" title="Opens in a new tab">Classroom screen ↗</a>
+                <a class="btn small primary" href="/${esc(r.code)}/admin">School Dashboard</a>
                 <button class="icon-btn" type="button" data-forget="${esc(r.code)}" aria-label="Remove ${esc(r.name || r.code)} from this list"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
               </div>
             </div>`).join("")}</div>
@@ -718,7 +718,7 @@ function renderHome() {
       })()}
       <section class="card step s4 find-card">
         <h2>Forgot your school code?</h2>
-        <p class="muted">Type your school name exactly as you set it up, plus your master panel PIN.</p>
+        <p class="muted">Type your school name exactly as you set it up, plus your School Dashboard PIN.</p>
         <form id="find" class="find-form">
           <label>School name<input id="find-name" autocomplete="organization" placeholder="e.g. Sunnyside Elementary" required /></label>
           <label>PIN<input id="find-pin" type="password" inputmode="numeric" autocomplete="current-password" required /></label>
@@ -730,7 +730,7 @@ function renderHome() {
       <footer class="app-foot">© 2026 STEMstarters LLC · <a href="https://dismissalmagic.com/privacy">Privacy Policy</a> · <a href="https://dismissalmagic.com/terms">Terms of Service</a></footer>
     </div>`;
   document.querySelectorAll("[data-forget]").forEach((b) => (b.onclick = () => { forgetSchool(b.dataset.forget); renderHome(); }));
-  document.querySelectorAll(".recent-row a").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
+  document.querySelectorAll(".recent-row a:not([target])").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
   document.getElementById("find").onsubmit = async (e) => {
     e.preventDefault();
     const err = document.getElementById("find-err"), out = document.getElementById("find-result");
@@ -741,7 +741,7 @@ function renderHome() {
     if (!r?.ok) { err.textContent = r?.error === "locked" ? ERRORS.locked : r?.error === "no_match" ? "No school matched that name and PIN. Check the spelling of the school name." : (ERRORS[r?.error] || ERRORS.network); return; }
     r.schools.forEach((x) => rememberSchool(x.code, x.name));
     out.innerHTML = r.schools.map((x) => `<div class="share-row found"><div><b>${esc(x.name)}</b><div class="big-code">${esc(x.code)}</div></div>
-      <div class="row"><a class="btn small" href="/${esc(x.code)}">Classroom screen</a><a class="btn small primary" href="/${esc(x.code)}/admin">Master panel</a></div></div>`).join("");
+      <div class="row"><a class="btn small" href="/${esc(x.code)}">Classroom screen</a><a class="btn small primary" href="/${esc(x.code)}/admin">School Dashboard</a></div></div>`).join("");
     out.querySelectorAll("a").forEach((a) => (a.onclick = (ev) => { ev.preventDefault(); sess.set("buspin:" + a.getAttribute("href").split("/")[1], pin); go(a.getAttribute("href")); }));
   };
   const codeEl = document.getElementById("join-code");
@@ -837,7 +837,7 @@ function renderAccount(next) {
         </section>
         <section class="card step s4 find-card">
           <h2>Add a school you already set up</h2>
-          <p class="muted">Made a school before accounts? Link it here with its code and master panel PIN.</p>
+          <p class="muted">Made a school before accounts? Link it here with its code and School Dashboard PIN.</p>
           <form id="claim" class="find-form">
             <label>School code<input id="claim-code" maxlength="80" placeholder="ABC123" autocomplete="off" autocapitalize="characters" required /></label>
             <label>PIN<input id="claim-pin" type="password" inputmode="numeric" autocomplete="current-password" required /></label>
@@ -878,16 +878,16 @@ function renderAccount(next) {
       <div class="recent-row">
         <div class="recent-name"><b>${esc(x.name || "School")}</b><span class="recent-code">${esc(x.code)}</span></div>
         <div class="row">
-          <a class="btn small" href="/${esc(x.code)}">Classroom screen</a>
-          <a class="btn small primary" href="/${esc(x.code)}/admin">Master panel</a>
+          <a class="btn small" href="/${esc(x.code)}" target="_blank" rel="noopener" title="Opens in a new tab">Classroom screen ↗</a>
+          <a class="btn small primary" href="/${esc(x.code)}/admin">School Dashboard</a>
         </div>
       </div>`).join("")}</div>`;
-    box.querySelectorAll("a").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
+    box.querySelectorAll("a:not([target])").forEach((a) => (a.onclick = (e) => { e.preventDefault(); go(a.getAttribute("href")); }));
   }
 }
 
 /* =========================== SETTINGS EDITOR =========================== */
-// Used both for "Create a school" and for editing from the master panel.
+// Used both for "Create a school" and for editing from the School Dashboard.
 function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete }) {
   const st = clone(initial);
   function render() {
@@ -982,7 +982,7 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete
 
         ${mode === "edit" && onDelete ? `<section class="card danger-zone wide">
           <h2>Delete this school</h2>
-          <p class="muted">Permanently removes this school's name, buses, settings and PIN. Classroom links and the master panel stop working right away. This can't be undone.</p>
+          <p class="muted">Permanently removes this school's name, buses, settings and PIN. Classroom links and the School Dashboard stop working right away. This can't be undone.</p>
           <div><button type="button" class="btn danger" id="s-delete">Delete this school…</button></div>
         </section>` : ""}
         <div class="settings-foot wide">
@@ -1089,8 +1089,8 @@ function shareBlock(code) {
         <div class="row nowrap"><button class="btn small primary" data-copy="${esc(cls)}" data-what="Classroom link">Copy link</button><a class="btn small" href="${esc(cls)}" target="_blank" rel="noopener">Open</a></div>
       </div>
       <div class="share-row">
-        <div><b>🔐 Master panel link</b> <span class="muted small">— for you and your backups (needs the PIN)</span><div class="link">${esc(adm)}</div></div>
-        <div class="row nowrap"><button class="btn small" data-copy="${esc(adm)}" data-what="Master panel link">Copy link</button><a class="btn small" href="${esc(adm)}" target="_blank" rel="noopener">Open</a></div>
+        <div><b>🔐 School Dashboard link</b> <span class="muted small">— for you and your backups (needs the PIN)</span><div class="link">${esc(adm)}</div></div>
+        <div class="row nowrap"><button class="btn small" data-copy="${esc(adm)}" data-what="School Dashboard link">Copy link</button><a class="btn small" href="${esc(adm)}" target="_blank" rel="noopener">Open</a></div>
       </div>
       <div class="share-row">
         <div><b>School code</b><div class="big-code">${esc(code)}</div></div>
@@ -1124,7 +1124,7 @@ function renderCreated(code, settings) {
       <h1>${esc(settings.name)} is ready! 🎉</h1>
       ${shareBlock(code)}
       <div class="row">
-        <button class="btn primary big" id="to-admin">Open master panel</button>
+        <button class="btn primary big" id="to-admin">Open School Dashboard</button>
         <button class="btn big" id="to-display">Preview classroom screen</button>
       </div>
     </div>`;
@@ -1133,7 +1133,7 @@ function renderCreated(code, settings) {
   document.getElementById("to-display").onclick = () => window.open(`/${code}`, "_blank");
 }
 
-/* ============================ MASTER PANEL ============================= */
+/* ============================ SCHOOL DASHBOARD ============================= */
 function renderAdmin(code) {
   const pinKey = "buspin:" + code;
   const pin = sess.get(pinKey) || store.get(pinKey);
@@ -1142,7 +1142,7 @@ function renderAdmin(code) {
   $app.innerHTML = `${demoBanner()}
     <div class="center-card card">
       <div class="hero-bus small">${busSVG("#ffd23f")}</div>
-      <h1>Master panel</h1>
+      <h1>School Dashboard</h1>
       <p class="muted">School code <b>${esc(code)}</b></p>
       <form id="pin-form" class="stack">
         <input id="pin" class="code-input" type="password" inputmode="numeric" placeholder="PIN" autocomplete="current-password" autofocus />
@@ -1225,7 +1225,8 @@ function adminPanel(code, pin) {
   function shell() {
     $app.innerHTML = `${demoBanner()}
       <div class="page admin" id="admin-root">
-        ${headBlock({ compact: true, pill: `<span id="live-dot" class="live-dot live"></span> Master panel · ${esc(code)}`, title: "", titleId: "a-title", right: `<div class="row">
+        ${headBlock({ compact: true, pill: `<span id="live-dot" class="live-dot live"></span> School Dashboard · ${esc(code)}`, title: "", titleId: "a-title", right: `<div class="row">
+            <button class="btn small light" id="a-home">← Home</button>
             <button class="btn small light" id="a-share">Share links</button>
             <button class="btn small light" id="a-settings">Settings</button>
             <button class="btn small light" id="a-out">Sign out</button>
@@ -1239,14 +1240,18 @@ function adminPanel(code, pin) {
         </section>
       </div>`;
     document.getElementById("a-out").onclick = signOut;
+    // Owners go back to My schools; backups without an account go to the home page.
+    const homeBtn = document.getElementById("a-home");
+    api.getUser().then((u) => { if (u && homeBtn) homeBtn.textContent = "← My schools"; });
+    homeBtn.onclick = async () => { const u = await api.getUser(); feed.stop(); go(u ? "/account" : "/"); };
     document.getElementById("a-share").onclick = () => {
-      openModal(`<h2>Share</h2>${shareBlock(code)}<p class="muted">Teachers only need the classroom link. Backups need the master link <i>and</i> the PIN.</p><div class="row"><button class="btn" data-close>Done</button></div>`);
+      openModal(`<h2>Share</h2>${shareBlock(code)}<p class="muted">Teachers only need the classroom link. Backups need the School Dashboard link <i>and</i> the PIN.</p><div class="row"><button class="btn" data-close>Done</button></div>`);
       wireCopy($modal);
     };
     document.getElementById("a-reset").onclick = () => confirmModal("Clear all of today's arrivals and calls?", "Reset", () => act({ type: "reset" }));
     document.getElementById("a-settings").onclick = () => {
       feed.stop();
-      $app.innerHTML = `${demoBanner()}<div class="page">${headBlock({ pill: "Master panel", title: "Settings", sub: esc(school.settings.name), right: `<div class="head-bus">${busSVG(school.settings.buses[0]?.color || "#ffd23f")}</div>` })}<div id="editor"></div></div>`;
+      $app.innerHTML = `${demoBanner()}<div class="page">${headBlock({ pill: "School Dashboard", title: "Settings", sub: esc(school.settings.name), right: `<div class="head-bus">${busSVG(school.settings.buses[0]?.color || "#ffd23f")}</div>` })}<div id="editor"></div></div>`;
       settingsEditor(document.getElementById("editor"), school.settings, {
         mode: "edit",
         onCancel: () => adminPanel(code, pin),
@@ -1288,7 +1293,7 @@ function adminPanel(code, pin) {
     const { settings } = school;
     const st = liveState(school.state);
     applyTheme(settings.theme);
-    document.title = `Master · ${settings.name}`;
+    document.title = `Dashboard · ${settings.name}`;
     document.getElementById("a-title").textContent = settings.name;
 
     // Group bar: call a whole group for every arrived bus
