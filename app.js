@@ -266,8 +266,10 @@ function walkersSVG(color, cls = "") {
   </svg>`;
 }
 const kindOf = (b) => b?.kind || "bus";
-// Vans and walkers are small groups: one "Call everyone" tap calls every grade group at once.
-const callsAll = (b) => kindOf(b) !== "bus";
+// How each item is called. Schools pick per item in Settings:
+//   "grades" = one call per grade group,  "all" = one "Call everyone" tap.
+// Default: buses by grade; vans and walkers all at once (they're small groups).
+const callsAll = (b) => (b?.call ? b.call === "all" : kindOf(b) !== "bus");
 function vehicleSVG(b, cls = "") {
   const k = kindOf(b);
   return k === "van" ? vanSVG(b.color, cls) : k === "walkers" ? walkersSVG(b.color, cls) : busSVG(b.color, cls);
@@ -1181,6 +1183,10 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete
                 <span class="mini-bus">${vehicleSVG(b)}</span>
                 <input type="color" data-bcolor="${i}" value="${esc(b.color)}" title="${kindOf(b) === "walkers" ? "Shirt color" : "Color"}" />
                 <input data-bname="${i}" value="${esc(b.name)}" placeholder="${kindOf(b) === "van" ? "Van name (like a daycare)" : kindOf(b) === "walkers" ? "Walkers (or a door, like Front door walkers)" : "Bus name or number"}" required />
+                <select class="call-pick" data-bcall="${i}" title="How is this called?" aria-label="How is ${esc(b.name || "this")} called?">
+                  <option value="grades" ${callsAll(b) ? "" : "selected"}>📣 By grade</option>
+                  <option value="all" ${callsAll(b) ? "selected" : ""}>📣 All at once</option>
+                </select>
                 <button type="button" class="icon-btn" data-bdel="${i}" title="Remove">✕</button>
               </div>`).join("")}
           </div>
@@ -1189,7 +1195,7 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete
             <button type="button" class="btn small" id="add-van">+ Add a van</button>
             <button type="button" class="btn small" id="add-walkers">+ Add walkers</button>
           </div>
-          <p class="muted small">Vans and walkers only show up if you add them.</p>
+          <p class="muted small">Vans and walkers only show up if you add them. Use the 📣 menu to pick how each one is called: by grade, or everyone at once.</p>
         </section>
 
         <section class="card step s3">
@@ -1267,6 +1273,7 @@ function settingsEditor(container, initial, { mode, onSubmit, onCancel, onDelete
     st.message = f.querySelector("#s-msg").value.trim();
     f.querySelectorAll("[data-bname]").forEach((el) => (st.buses[+el.dataset.bname].name = el.value.trim()));
     f.querySelectorAll("[data-bcolor]").forEach((el) => (st.buses[+el.dataset.bcolor].color = el.value));
+    f.querySelectorAll("[data-bcall]").forEach((el) => (st.buses[+el.dataset.bcall].call = el.value));
     f.querySelectorAll("[data-gname]").forEach((el) => (st.groups[+el.dataset.gname].name = el.value.trim()));
     st.theme = { primary: f.querySelector("#t-primary").value, accent: f.querySelector("#t-accent").value, bg: f.querySelector("#t-bg").value };
     st.sound = f.querySelector("#s-sound").value;

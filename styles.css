@@ -136,6 +136,8 @@ label.color-pick { flex-direction: row; align-items: center; gap: 8px; }
 .settings-foot { text-align: center; display: flex; flex-direction: column; gap: 12px; }
 .list { display: flex; flex-direction: column; gap: 10px; margin: 4px 0; }
 .list-row { display: flex; align-items: center; gap: 10px; }
+.list-row .call-pick { flex: none; width: auto; padding: 8px 10px; font-size: .9rem; border-radius: 999px; }
+@media (max-width: 640px) { .list-row { flex-wrap: wrap; } .list-row [data-bname] { flex: 1 1 140px; } }
 .mini-bus { width: 72px; flex: none; }
 .swatch {
   font: 600 .95rem var(--body); display: flex; gap: 6px; align-items: center; padding: 6px 14px; min-height: 44px;
