@@ -151,13 +151,13 @@ function chip(n, small = false) {
 }
 const STAR_SVG = `<svg class="istar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
 // Dismissal Magic stars drifting down the call screen.
-function starRain(n = 30, front = false) {
+function starRain(n = 16, front = false) {
   const fills = ["#F8C631", "#F8C631", "#FFE27A", "#ffffff", "#FC52B3"];
-  const [lo, hi] = front ? [20, 32] : [22, 50];
+  const [lo, hi] = front ? [18, 26] : [20, 40];
   return `<div class="star-rain ${front ? "front" : ""}" aria-hidden="true">${Array.from({ length: n }, (_, i) => {
     const r = (a, b) => (a + Math.random() * (b - a)).toFixed(2);
     const fill = fills[i % fills.length];
-    return `<span style="--x:${r(0, 98)}%;--s:${r(lo, hi)}px;--t:${r(4.5, 8)}s;--d:${r(-8, 0)}s;--sw:${r(-40, 40)}px;--spin:${r(-200, 200)}deg"><svg viewBox="0 0 24 24"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="${fill}" stroke="#3A0F65" stroke-width="1.6" stroke-linejoin="round"/></svg></span>`;
+    return `<span style="--x:${r(0, 98)}%;--s:${r(lo, hi)}px;--t:${r(10, 15)}s;--d:${r(-15, 0)}s;--sw:${r(-18, 18)}px;--spin:${r(-60, 60)}deg"><svg viewBox="0 0 24 24"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="${fill}" stroke="#3A0F65" stroke-width="1.6" stroke-linejoin="round"/></svg></span>`;
   }).join("")}</div>`;
 }
 function wordmark() {
@@ -1906,7 +1906,7 @@ function renderDisplay(code) {
     if (!layer) { showing = false; return; }
     pauseVideo();
     layer.style.setProperty("--bus", bus.color);
-    layer.innerHTML = `${starRain()}${starRain(14, true)}<div class="road-strip" aria-hidden="true">${[0, 1, 2].map((i) => `<span style="--d:${i}">${vehicleSVG(bus)}</span>`).join("")}</div>
+    layer.innerHTML = `${starRain()}${starRain(5, true)}<div class="road-strip" aria-hidden="true">${[0, 1, 2].map((i) => `<span style="--d:${i}">${vehicleSVG(bus)}</span>`).join("")}</div>
     <div class="popup" style="--bus:${esc(bus.color)}">
       <div class="popup-bus">${vehicleSVG(bus, "drive-in bounce")}</div>
       <div class="popup-title">${esc(itemTitle(bus, lang))}</div>
