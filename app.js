@@ -150,6 +150,16 @@ function chip(n, small = false) {
   return `<span class="nchip c${(n - 1) % 4}${small ? " sm" : ""}" aria-hidden="true"><b>${n}</b></span>`;
 }
 const STAR_SVG = `<svg class="istar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+// Dismissal Magic stars drifting down the call screen.
+function starRain(n = 30, front = false) {
+  const fills = ["#F8C631", "#F8C631", "#FFE27A", "#ffffff", "#FC52B3"];
+  const [lo, hi] = front ? [20, 32] : [22, 50];
+  return `<div class="star-rain ${front ? "front" : ""}" aria-hidden="true">${Array.from({ length: n }, (_, i) => {
+    const r = (a, b) => (a + Math.random() * (b - a)).toFixed(2);
+    const fill = fills[i % fills.length];
+    return `<span style="--x:${r(0, 98)}%;--s:${r(lo, hi)}px;--t:${r(4.5, 8)}s;--d:${r(-8, 0)}s;--sw:${r(-40, 40)}px;--spin:${r(-200, 200)}deg"><svg viewBox="0 0 24 24"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="${fill}" stroke="#3A0F65" stroke-width="1.6" stroke-linejoin="round"/></svg></span>`;
+  }).join("")}</div>`;
+}
 function wordmark() {
   const i = `<span class="si">ı${STAR_SVG}</span>`;
   return `<span class="wordmark" aria-label="Dismissal Magic"><span aria-hidden="true">D${i}sm${i}ssal Mag${i}c</span></span>`;
@@ -1896,9 +1906,8 @@ function renderDisplay(code) {
     if (!layer) { showing = false; return; }
     pauseVideo();
     layer.style.setProperty("--bus", bus.color);
-    layer.innerHTML = `<div class="road-strip" aria-hidden="true">${[0, 1, 2].map((i) => `<span style="--d:${i}">${vehicleSVG(bus)}</span>`).join("")}</div>
+    layer.innerHTML = `${starRain()}${starRain(14, true)}<div class="road-strip" aria-hidden="true">${[0, 1, 2].map((i) => `<span style="--d:${i}">${vehicleSVG(bus)}</span>`).join("")}</div>
     <div class="popup" style="--bus:${esc(bus.color)}">
-      <div class="confetti">${Array.from({ length: 24 }, (_, i) => `<i style="--i:${i};--c:${i % 3 ? "var(--accent)" : esc(bus.color)}"></i>`).join("")}</div>
       <div class="popup-bus">${vehicleSVG(bus, "drive-in bounce")}</div>
       <div class="popup-title">${esc(itemTitle(bus, lang))}</div>
       <div class="popup-group">${esc(grp.name)}</div>
