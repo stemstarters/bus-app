@@ -1,7 +1,7 @@
 {
   "name": "Dismissal Magic",
   "short_name": "Dismissal",
-  "description": "Quiet bus calls for every classroom.",
+  "description": "Make dismissal magical: quiet bus calls for every classroom.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

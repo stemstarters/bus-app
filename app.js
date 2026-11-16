@@ -823,12 +823,12 @@ function forgetSchool(code) { store.set("busrecent", (store.get("busrecent") || 
 
 function renderHome() {
   applyTheme(THEMES.STEMstarters);
-  document.title = "Dismissal Magic — quiet bus calls for every classroom";
+  document.title = "Dismissal Magic — make dismissal magical";
   const recent = store.get("busrecent") || [];
   $app.innerHTML = `
     ${demoBanner()}
     <div class="home">
-      ${headBlock({ pill: "For schools", title: wordmark(), sub: "Quiet bus calls, like magic. Call buses by grade. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed.", right: `<div class="head-bus">${busSVG("#ffd23f", "drive-in")}</div>` })}
+      ${headBlock({ pill: "For schools", title: wordmark(), sub: "Make dismissal magical. Call buses by grade. Classroom screens light up so teachers know exactly when to send riders down. No intercom needed.", right: `<div class="head-bus">${busSVG("#ffd23f", "drive-in")}</div>` })}
       ${(() => {
         if (!recent.length) return "";
         return `<section class="card step s3 recent-card top">

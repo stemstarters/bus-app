@@ -37,7 +37,7 @@ const BRANDS: Record<string, Brand> = {
     accent: "#F8C631",
     bg: "#fdf6e3",
     emoji: "🚌",
-    tagline: "Quiet bus calls, like magic.",
+    tagline: "Make dismissal magical.",
   },
   quest: {
     key: "quest",
