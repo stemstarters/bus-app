@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ask your principal or PTA for Dismissal Magic — fill-in-the-blank note for teachers</title>
+  <meta name="description" content="Teachers: fill in a few blanks and get a ready-to-send note asking your principal or PTA to try Dismissal Magic, the quiet way to call buses. Takes about a minute." />
+  <link rel="canonical" href="https://dismissalmagic.com/ask" />
+  <meta property="og:title" content="Ask your principal for quieter bus calls" />
+  <meta property="og:description" content="Fill in a few blanks and get a ready-to-send note for your principal or PTA. Takes about a minute." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://dismissalmagic.com/ask" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --purple: #9246DD; --purple-dark: #3A0F65; --pink: #FC52B3; --mint: #8DEFDA; --teal: #2FC2A3; --yellow: #F8C631;
+      --bg: #fdf6e3; --ink: #2b2d42; --muted: #5c5f78; --card: #fff; --blank: #FFF6D6;
+      --head: "League Spartan", "Montserrat", "Segoe UI", system-ui, sans-serif;
+      --body: "Poppins", "Segoe UI", system-ui, sans-serif;
+      --shadow: 0 14px 30px -18px rgba(58, 15, 101, .5);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.55 var(--body); }
+    h1, h2 { font-family: var(--head); font-weight: 800; line-height: 1.05; margin: 0 0 .5em; }
+    a { color: var(--purple); }
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+    .nav { border-bottom: 1px solid rgba(58,15,101,.08); }
+    .nav .wrap { max-width: 1160px; display: flex; align-items: center; justify-content: space-between; gap: 14px 18px; min-height: 76px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--purple-dark); font: 800 1.7rem/1 var(--head); }
+    .brand-bus { width: 54px; height: 32px; display: block; flex: none; }
+    .brand em { color: var(--purple); }
+    .wordmark { white-space: nowrap; }
+    .wordmark em { font-style: normal; }
+    .si { position: relative; display: inline-block; }
+    .istar { position: absolute; left: 50%; top: 0.02em; width: 0.44em; height: 0.44em; transform: translateX(-50%); overflow: visible; }
+    .links { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px;
+      font: 700 1rem/1 var(--body); text-decoration: none; cursor: pointer;
+      border: 3px solid var(--ink); border-radius: 999px; padding: 10px 22px;
+      background: #fff; color: var(--ink); box-shadow: 0 4px 0 var(--ink); transition: transform .08s, box-shadow .08s;
+    }
+    .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+    .btn.primary { background: var(--purple); color: #fff; }
+    .btn.yellow { background: var(--yellow); color: var(--purple-dark); border-color: var(--purple-dark); box-shadow: 0 4px 0 var(--purple-dark); }
+    .btn.big { font-size: 1.1rem; padding: 14px 28px; min-height: 56px; }
+    :is(a, button):focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
+
+    .head { position: relative; overflow: hidden; isolation: isolate; background: var(--purple); color: #fff; border-radius: 36px; padding: 44px 44px 40px; margin: 34px 0 26px; box-shadow: 0 24px 40px -24px rgba(58, 15, 101, .8); }
+    .blob { position: absolute; border-radius: 50%; z-index: -1; pointer-events: none; }
+    .b1 { right: -80px; top: -110px; width: 300px; height: 300px; background: var(--pink); opacity: .35; }
+    .b2 { left: 40%; bottom: -170px; width: 280px; height: 280px; background: var(--mint); opacity: .22; }
+    .pill { display: inline-block; background: var(--yellow); color: var(--purple-dark); font-weight: 700; font-size: .95rem; padding: 6px 16px; border-radius: 999px; margin-bottom: 16px; }
+    .head h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); color: #fff; max-width: 640px; }
+    .head p { font-size: 1.15rem; font-weight: 500; opacity: .95; max-width: 600px; margin: 0; }
+
+    .wrap.work { max-width: 1160px; }
+    .cols { display: grid; grid-template-columns: minmax(0, 350px) minmax(0, 1fr); gap: 24px; align-items: start; }
+    .panel { background: var(--card); border: 4px solid var(--purple); border-radius: 28px; padding: 24px; box-shadow: var(--shadow); display: grid; gap: 14px; min-width: 0; }
+    .panel.side { border-color: var(--yellow); }
+    .panel h2 { font-size: 1.6rem; color: var(--purple-dark); margin: 0; }
+    label { display: grid; gap: 5px; font-weight: 700; font-size: .92rem; color: var(--purple-dark); }
+    input, select, textarea { font: 500 1rem/1.4 var(--body); color: var(--ink); width: 100%; min-width: 0; padding: 11px 12px; border: 2px solid #ddd5e4; border-radius: 12px; background: #fff; }
+    input:focus, select:focus, textarea:focus { border-color: var(--purple); outline: none; }
+    textarea { min-height: 780px; line-height: 1.6; resize: vertical; }
+    .hint { font-size: .88rem; color: var(--muted); margin: 0; }
+    .tips { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: .92rem; }
+    .tips li { position: relative; padding-left: 26px; }
+    .tips li::before { content: ""; position: absolute; left: 0; top: .35em; width: 16px; height: 16px; border-radius: 50%; background: var(--mint); }
+    .send { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .status { min-height: 1.5em; font-weight: 600; color: #13806B; margin: 0; }
+    .final { text-align: center; background: #fff; border-radius: 28px; padding: 34px 24px; margin: 40px 0 0; box-shadow: var(--shadow); }
+    .final h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); color: var(--purple-dark); }
+    .final p { color: var(--muted); margin: 0 auto 20px; max-width: 520px; }
+    .final div { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    footer { padding: 40px 0 50px; color: var(--muted); font-size: .95rem; }
+    footer .wrap { max-width: 1160px; display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; align-items: center; }
+    @media (max-width: 860px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+    @media (max-width: 600px) {
+      .head { padding: 32px 24px 30px; border-radius: 28px; }
+      .panel { padding: 20px 16px; border-radius: 22px; } textarea { min-height: 520px; }
+      .brand { font-size: 1.4rem; } .brand-bus { width: 44px; height: 26px; }
+      .send .btn { flex: 1 1 100%; }
+    }
+    @media print {
+      .nav, .head, .side, .send, .status, .hint, .final, footer, .subj { display: none !important; }
+      body { background: #fff; } .cols { display: block; } .panel { border: 0; box-shadow: none; padding: 0; }
+      .panel h2 { display: none; } textarea { border: 0; padding: 0; min-height: 0; font-size: 12pt; }
+    }
+  </style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="bus" viewBox="0 0 220 128">
+      <ellipse cx="112" cy="120" rx="98" ry="6" fill="rgba(0,0,0,.15)"/>
+      <rect x="18" y="7" width="10" height="8" rx="2" fill="#ff5a5f" stroke="#2b2d42" stroke-width="2"/>
+      <rect x="148" y="7" width="10" height="8" rx="2" fill="#ff5a5f" stroke="#2b2d42" stroke-width="2"/>
+      <path d="M160 52 H196 Q208 54 210 66 V100 H160 Z" fill="#ffd23f" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M14 100 V24 Q14 13 26 13 H156 Q166 13 166 24 V100 Z" fill="#ffd23f" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M158 22 Q164 22 165 28 L170 52 H158 Z" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="22" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="45" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="68" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="91" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="114" y="22" width="19" height="22" rx="4" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <rect x="137" y="22" width="18" height="74" rx="3" fill="#dff3ff" stroke="#2b2d42" stroke-width="3"/>
+      <text x="76" y="56.5" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="9.5" fill="#2b2d42">SCHOOL BUS</text>
+      <rect x="16" y="63" width="119" height="4" fill="#2b2d42"/><rect x="16" y="75" width="119" height="4" fill="#2b2d42"/><rect x="16" y="87" width="119" height="4" fill="#2b2d42"/>
+      <polygon points="122,48 128,48 132,52 132,58 128,62 122,62 118,58 118,52" fill="#e63946" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="180" cy="66" r="4.2" fill="#2b2d42"/><circle cx="193" cy="66" r="4.2" fill="#2b2d42"/>
+      <circle cx="181.4" cy="64.5" r="1.5" fill="#fff"/><circle cx="194.4" cy="64.5" r="1.5" fill="#fff"/>
+      <circle cx="175" cy="76" r="3.4" fill="#ff8fab"/><circle cx="199" cy="76" r="3.4" fill="#ff8fab"/>
+      <path d="M181 75 Q186.5 81 192 75" fill="none" stroke="#2b2d42" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="206" cy="86" r="4.5" fill="#fff3b0" stroke="#2b2d42" stroke-width="2.5"/>
+      <rect x="196" y="96" width="18" height="7" rx="3" fill="#2b2d42"/><rect x="8" y="96" width="14" height="7" rx="3" fill="#2b2d42"/>
+      <circle cx="48" cy="102" r="15" fill="#2b2d42"/><circle cx="48" cy="102" r="6" fill="#e9ecef"/>
+      <circle cx="180" cy="102" r="15" fill="#2b2d42"/><circle cx="180" cy="102" r="6" fill="#e9ecef"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Dismissal Magic home"><svg class="brand-bus" aria-hidden="true"><use href="#bus"/></svg><span class="wordmark" aria-label="Dismissal Magic"><span aria-hidden="true">D<span class="si">ı<svg class="istar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg></span>sm<span class="si">ı<svg class="istar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg></span>ssal <em>Mag<span class="si">ı<svg class="istar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.4 6.6 6.6 2.4-6.6 2.4L12 19.5l-2.4-6.6L3 10.5l6.6-2.4z" fill="#F8C631" stroke="#3A0F65" stroke-width="1.8" stroke-linejoin="round"/></svg></span>c</em></span></span></a>
+    <nav class="links" aria-label="Main">
+      <a class="btn" href="https://app.dismissalmagic.com/demo">Try the demo</a>
+      <a class="btn primary" href="https://app.dismissalmagic.com/account?next=create">Start free trial</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap work">
+  <section class="head">
+    <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span>
+    <span class="pill">✨ For teachers</span>
+    <h1>Ask your principal or PTA.</h1>
+    <p>Want quieter bus calls at your school? Fill in your details and the letter writes itself. Then copy it, email it or print it. Nothing you type leaves this page.</p>
+  </section>
+
+  <div class="cols">
+    <section class="panel side" aria-label="Your details">
+      <h2>Your details</h2>
+      <label>Who are you asking?
+        <select id="f-who">
+          <option value="principal">My principal</option>
+          <option value="pta">Our PTA</option>
+        </select>
+      </label>
+      <label><span id="to-label">Principal's name</span><input id="f-to" placeholder="Dr. Smith" autocomplete="off" /></label>
+      <label>Your name<input id="f-name" placeholder="Ms. Rivera" autocomplete="name" /></label>
+      <label>Your grade or class<input id="f-class" placeholder="2nd grade" autocomplete="off" /></label>
+      <label>Your school<input id="f-school" placeholder="Oak Grove Elementary" autocomplete="off" /></label>
+      <label>How are buses called now?
+        <select id="f-how">
+          <option value="over the intercom">Over the intercom</option>
+          <option value="by walkie-talkie">By walkie-talkie</option>
+          <option value="by sending someone down the hall">Someone comes down the hall</option>
+        </select>
+      </label>
+      <label>What's the hardest part?
+        <select id="f-pain">
+          <option value="the announcements cut into the end of our day">Announcements interrupt class</option>
+          <option value="we can't always hear which bus was called">We can't hear which bus was called</option>
+          <option value="students keep asking whether that was their bus">"Was that our bus?"</option>
+          <option value="the hallways get crowded when everyone leaves at once">Crowded hallways</option>
+        </select>
+      </label>
+      <label>Price
+        <select id="f-price">
+          <option value="149">$149/yr · Founding school (first 25)</option>
+          <option value="249">$249/yr · School plan</option>
+        </select>
+      </label>
+      <p class="hint">Changing a detail rewrites the letter, so fill these in first, then make your own edits.</p>
+      <ul class="tips">
+        <li>Show the live demo on your board. It takes about a minute.</li>
+        <li>Mention it in person too, then send the email as the follow-up.</li>
+        <li>Your school can pay by card, purchase order or invoice.</li>
+      </ul>
+    </section>
+
+    <section class="panel" aria-label="Your letter">
+      <h2>Your letter</h2>
+      <label class="subj">Subject<input id="subject" autocomplete="off" /></label>
+      <label>Letter<textarea id="letter" spellcheck="true"></textarea></label>
+      <div class="send">
+        <button class="btn yellow" type="button" id="copy">Copy letter</button>
+        <a class="btn" id="mail" href="#">Open in email</a>
+        <button class="btn" type="button" id="print">Print</button>
+      </div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <section class="final">
+    <h2>Want to see it first?</h2>
+    <p>The live demo needs no sign-up. Open it on your classroom screen and watch a bus get called.</p>
+    <div>
+      <a class="btn primary big" href="https://app.dismissalmagic.com/demo">Try the live demo</a>
+      <a class="btn big" href="/">See how it works</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 STEMstarters LLC · Dismissal Magic</span>
+    <span><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a> · <a href="mailto:hello@dismissalmagic.com">hello@dismissalmagic.com</a></span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ids = ['who', 'to', 'name', 'class', 'school', 'how', 'pain', 'price'];
+  function v(k, fallback) { var x = $('f-' + k).value.trim(); return x || fallback; }
+
+  function build() {
+    var pta = $('f-who').value === 'pta';
+    $('to-label').textContent = pta ? 'Who at the PTA?' : 'Principal\'s name';
+    $('f-to').placeholder = pta ? 'PTA board' : 'Dr. Smith';
+    var T = v('to', pta ? 'PTA board' : '[Principal\'s name]'), N = v('name', '[Your name]');
+    var C = v('class', '[your class]'), S = v('school', '[school]');
+    var atSchool = S === '[school]' ? 'our school' : S;
+    var how = $('f-how').value, pain = $('f-pain').value;
+    var priceLine = $('f-price').value === '149'
+      ? '$149 a year for the whole school. That\'s a founding-school price for the first 25 schools, and it stays locked in for as long as we stay subscribed. (The regular price is $249 a year.)'
+      : '$249 a year for the whole school, with unlimited classroom screens.';
+    var sign = N + '\n' + C + (S === '[school]' ? '' : ', ' + S);
+    var what = 'It\'s called Dismissal Magic. The office taps a button when a bus arrives, and every classroom screen shows which bus and which grades to send down. No intercom announcements, and nothing to install. It works on the screens we already have.';
+    var privacy = '• No student information. It never collects names, rosters or logins.';
+
+    if (pta) {
+      $('subject').value = 'An idea for quieter dismissals at ' + atSchool;
+      $('letter').value =
+'Hi ' + T + ',\n\n' +
+'I have a small request that would make the end of the day calmer for students and teachers at ' + atSchool + '.\n\n' +
+'Right now we call buses ' + how + ', and the hardest part is that ' + pain + '. I found something that fixes that.\n\n' +
+what + '\n\n' +
+'Would the PTA consider covering it for our school? Here\'s what it involves:\n\n' +
+'• It\'s ' + priceLine + '\n' +
+'• The first month is free with no credit card, so we can make sure it works for us before the PTA spends anything.\n' +
+privacy + '\n\n' +
+'There\'s a live demo at dismissalmagic.com, and I\'d be glad to show it at the next PTA meeting. Thank you for everything you do for our school!\n\n' +
+sign;
+    } else {
+      $('subject').value = 'A quieter way to call buses at ' + atSchool;
+      $('letter').value =
+'Hi ' + T + ',\n\n' +
+'I found something that could make dismissal calmer for everyone at ' + atSchool + ', and I\'d love your support in trying it!\n\n' +
+'Right now we call buses ' + how + ', and the hardest part for my class is that ' + pain + '.\n\n' +
+what + '\n\n' +
+'Here\'s why I think it\'s a great fit for us:\n\n' +
+'• Calmer afternoons. Teachers see exactly when to send riders down, so we can keep teaching until our bus is called.\n' +
+'• Easy for the office. Whoever runs dismissal taps once per bus, and a backup can run it with the school\'s PIN.\n' +
+'• Nothing for teachers to set up. We open one link and leave it up. No accounts.\n' +
+privacy + '\n\n' +
+'It\'s free to try for a month with no credit card. After that it\'s ' + priceLine + '\n\n' +
+'Could we try the free month? There\'s a live demo at dismissalmagic.com that takes about a minute, and I\'d be happy to help set it up. Thank you for always supporting our students!\n\n' +
+sign;
+    }
+    updateMail(); $('status').textContent = '';
+  }
+  function updateMail() {
+    $('mail').href = 'mailto:?subject=' + encodeURIComponent($('subject').value) + '&body=' + encodeURIComponent($('letter').value);
+  }
+  ids.forEach(function (k) { $('f-' + k).addEventListener('input', build); $('f-' + k).addEventListener('change', build); });
+  $('letter').addEventListener('input', updateMail); $('subject').addEventListener('input', updateMail);
+  $('copy').addEventListener('click', function () {
+    var t = 'Subject: ' + $('subject').value + '\n\n' + $('letter').value;
+    function done() { $('status').textContent = 'Copied! Paste it into an email.'; }
+    function manual() { $('letter').focus(); $('letter').select(); try { document.execCommand('copy'); done(); } catch (e) { $('status').textContent = 'Press Ctrl+C (or ⌘C) to copy the letter.'; } }
+    try { navigator.clipboard.writeText(t).then(done, manual); } catch (e) { manual(); }
+  });
+  $('print').addEventListener('click', function () { window.print(); });
+  build();
+})();
+</script>
+</body>
+</html>
