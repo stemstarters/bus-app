@@ -166,10 +166,10 @@
       </label>
       <label>What's the hardest part?
         <select id="f-pain">
-          <option value="the announcements cut into the end of our day">Announcements interrupt class</option>
-          <option value="we can't always hear which bus was called">We can't hear which bus was called</option>
-          <option value="students keep asking whether that was their bus">"Was that our bus?"</option>
-          <option value="the hallways get crowded when everyone leaves at once">Crowded hallways</option>
+          <option value="all">All three of these</option>
+          <option value="loud">It's too loud</option>
+          <option value="wait">We can't do anything while we wait</option>
+          <option value="grade">Most calls aren't for our grade</option>
         </select>
       </label>
       <label>Price
@@ -229,7 +229,14 @@
     var T = v('to', pta ? 'PTA board' : '[Principal\'s name]'), N = v('name', '[Your name]');
     var C = v('class', '[your class]'), S = v('school', '[school]');
     var atSchool = S === '[school]' ? 'our school' : S;
-    var how = $('f-how').value, pain = $('f-pain').value;
+    var how = $('f-how').value;
+    var calls = how === 'over the intercom' ? 'announcements' : 'calls';
+    var pain = {
+      all: 'It\'s loud, we can\'t get anything done while we wait to be called, and most of the ' + calls + ' aren\'t even for our grade level.',
+      loud: 'It\'s loud, and it takes over the room at the end of every day.',
+      wait: 'We can\'t get anything done while we wait to be called, because we have to stop and listen for our bus.',
+      grade: 'Most of the ' + calls + ' aren\'t for our grade level, so we sit through a lot that we don\'t need to hear.'
+    }[$('f-pain').value];
     var priceLine = $('f-price').value === '149'
       ? '$149 a year for the whole school. That\'s a founding-school price for the first 25 schools, and it stays locked in for as long as we stay subscribed. (The regular price is $249 a year.)'
       : '$249 a year for the whole school, with unlimited classroom screens.';
@@ -242,7 +249,7 @@
       $('letter').value =
 'Hi ' + T + ',\n\n' +
 'I have a small request that would make the end of the day calmer, and a little bit magical, for students and teachers at ' + atSchool + '.\n\n' +
-'Right now we call buses ' + how + ', and the hardest part is that ' + pain + '. I found something that fixes that.\n\n' +
+'Right now we call buses ' + how + '. ' + pain + ' I found something that fixes that.\n\n' +
 what + '\n\n' +
 'Would the PTA consider covering it for our school? Here\'s what it involves:\n\n' +
 '• It\'s ' + priceLine + '\n' +
@@ -256,7 +263,7 @@ sign;
       $('letter').value =
 'Hi ' + T + ',\n\n' +
 'I found something that could make dismissal feel like magic at ' + atSchool + ', and I\'d love your support in trying it!\n\n' +
-'Right now we call buses ' + how + ', and the hardest part for my class is that ' + pain + '.\n\n' +
+'Right now we call buses ' + how + '. ' + pain + '\n\n' +
 what + '\n\n' +
 'Here\'s why I think it\'s a great fit for us:\n\n' +
 '• Calmer afternoons. Teachers see exactly when to send riders down, so we can keep teaching until our bus is called.\n' +
